@@ -1,0 +1,56 @@
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Viraj%409380@localhost:5432/digihire_db")
+
+allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload
+
+
+assesment_can : score
+
+
+company id: int
+user id 
+
+
+score: percent
+Ui heading
+score display on Ui
+Delete icon
+
+
+display vendors table
+
+getAssignedVendors(selectedAssessment?.id)
+
+
+vendor count display
+
+routes, service, repos, schema,
+
+
+new page : name, mail, assigned candidates, Table: restrict, (action: edit: limit max candidates, delete), Top right: popup : only filterd out(same as assessment assign) 
+
+
+
+
+1.assigned vendors list
+
+
+
+
+
+
+
+
+
+
+<div className="mb-4 text-sm">
+              <span className="font-medium">Assigned Vendors:</span>
+              <span className="ml-2 font-semibold text-gray-800">
+                {assignedCounts[a.id || a.assessment_id] ?? 0}
+              </span>
+            </div>
+

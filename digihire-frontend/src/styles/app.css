@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Custom UI Enhancements ===== */
+
+body {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Card hover enhancement */
+.card-hover {
+  @apply transition-shadow duration-200 hover:shadow-lg;
+}
+
+/* Button shared styling */
+.btn {
+  @apply px-3 py-1 rounded text-sm font-medium transition;
+}
+
+.btn-primary {
+  @apply bg-sky-600 text-white hover:bg-sky-700;
+}
+
+.btn-danger {
+  @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+.btn-warning {
+  @apply bg-yellow-400 text-white hover:bg-yellow-500;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300;
+}
+
+/* Badge styles */
+.badge {
+  @apply inline-block px-2 py-1 rounded text-xs font-semibold;
+}
+
+.badge-info {
+  @apply bg-blue-600 text-white;
+}
+
+.badge-green {
+  @apply bg-green-100 text-green-700;
+}
+
+.badge-muted {
+  @apply bg-gray-100 text-gray-600;
+}
+
+/* Grid responsiveness fixes */
+.card-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+/* NAVBAR */
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e8ec;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-logo {
+  height: 38px;
+}
+
+.navbar-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #0a3d91;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 32px;
+}
+
+.nav-link {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4a4a4a;
+  text-decoration: none;
+  transition: 0.25s ease;
+  padding-bottom: 6px;
+}
+
+.nav-link:hover {
+  color: #0a3d91;
+}
+
+.nav-active {
+  border-bottom: 3px solid #1ecb8f;
+  color: #0a3d91 !important;
+  font-weight: 600;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-user-circle {
+  width: 36px;
+  height: 36px;
+  background: #1ecb8f;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+
+/* src/styles/app.css */
+
+/* keep Tailwind base included in your PostCSS/Tailwind pipeline.
+   These styles are small helpers used by these components. */
+
+body {
+  background: #f8fafc; /* light gray */
+}
+
+/* Add custom card look */
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+}
+
+/* Small round buttons */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+/* responsive fix for modal content */
+@media (max-width: 640px) {
+  .max-w-3xl { max-width: 96% !important; }
+  .max-w-md { max-width: 92% !important; }
+}

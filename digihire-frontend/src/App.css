@@ -1,0 +1,139 @@
+/* layout */
+.page-container {
+  padding: 32px;
+  font-family: "Inter", sans-serif;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* stats */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-box {
+  background: #fff;
+  padding: 18px 22px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  width: 180px;
+}
+
+.stat-box p {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* cards grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 22px;
+}
+
+/* assessment card */
+.assessment-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+  transition: transform 0.15s ease;
+}
+
+.assessment-card:hover {
+  transform: translateY(-3px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.draft { background: #e8f3ff; color: #0b66d5; }
+.badge.published { background: #e3ffe8; color: #15803d; }
+.badge.closed { background: #ffeaea; color: #b91c1c; }
+
+.card-description {
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.card-meta {
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+}
+
+.btn.view { background: #e5e7eb; }
+.btn.edit { background: #0d6efd; color: white; }
+.btn.delete { background: #dc2626; color: white; }
+
+.primary-btn {
+  background: #0d6efd;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* navbar */
+.navbar {
+  background: white;
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.nav-links a {
+  margin-left: 22px;
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+}
+
+.nav-links a.active {
+  color: #0d6efd;
+}

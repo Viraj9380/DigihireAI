@@ -1,0 +1,5 @@
+Programming Languages: Proficiency in languages such as Java, Python, C++, JavaScript, C#, etc.
+Web Technologies: Experience with HTML, CSS, JavaScript, and modern frameworks (e.g., React, Angular, Vue.js)
+Databases: Experience with both SQL and NoSQL databases (e.g., MySQL, MongoDB, PostgreSQL)
+Version Control: Proficiency with version control systems, particularly Git
+Cloud Platforms: Familiarity with cloud platforms such as AWS, Azure, or Google Cloud (preferred)

@@ -1,0 +1,54 @@
+.main-container {
+  width: 90%;
+  margin: auto;
+  padding: 20px;
+}
+
+.bulk-box {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.row-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.row-box input {
+  padding: 8px;
+  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.upload-label {
+  background: #1d4ed8;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.add-row-btn,
+.create-btn {
+  margin-right: 10px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.cand-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.cand-table th,
+.cand-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
