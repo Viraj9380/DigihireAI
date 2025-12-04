@@ -1,17 +1,18 @@
+#app/routers/assessment.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from app.database import get_db
-from app import schemas, crud
-
+from app.db.database import get_db
+from app import schemas
+from app.services.assessment import list_assessments, create_assessment, get_assessment, update_assessment, delete_assessment
 router = APIRouter()
-
+ 
 # ---------------------------
 # GET ALL ASSESSMENTS
 # ---------------------------
 @router.get("/assessments/", response_model=List[schemas.AssessmentOut])
 def get_assessments(db: Session = Depends(get_db)):
-    return crud.assessment.list_assessments(db)
+    return list_assessments(db)
 
 
 # ---------------------------
@@ -19,7 +20,7 @@ def get_assessments(db: Session = Depends(get_db)):
 # ---------------------------
 @router.post("/assessments/", response_model=schemas.AssessmentCreate)
 def create_assessment(data: schemas.AssessmentCreate, db: Session = Depends(get_db)):
-    return crud.assessment.create_assessment(db, data)
+    return create_assessment(db, data)
 
 
 # ---------------------------
@@ -27,7 +28,7 @@ def create_assessment(data: schemas.AssessmentCreate, db: Session = Depends(get_
 # ---------------------------
 @router.get("/assessments/{assessment_id}", response_model=schemas.AssessmentOut)
 def get_single_assessment(assessment_id: str, db: Session = Depends(get_db)):
-    assessment = crud.assessment.get_assessment(db, assessment_id)
+    assessment = get_assessment(db, assessment_id)
     if not assessment:
         raise HTTPException(404, "Assessment not found")
     return assessment
@@ -42,7 +43,7 @@ def update_assessment(
     data: schemas.AssessmentCreate,
     db: Session = Depends(get_db),
 ):
-    updated = crud.assessment.update_assessment(db, assessment_id, data)
+    updated = update_assessment(db, assessment_id, data)
     if not updated:
         raise HTTPException(404, "Assessment not found")
     return updated
@@ -53,7 +54,7 @@ def update_assessment(
 # ---------------------------
 @router.delete("/assessments/{assessment_id}")
 def delete_assessment(assessment_id: str, db: Session = Depends(get_db)):
-    deleted = crud.assessment.delete_assessment(db, assessment_id)
+    deleted = delete_assessment(db, assessment_id)
     if not deleted:
         raise HTTPException(404, "Assessment not found")
     return {"message": "Assessment deleted successfully"}

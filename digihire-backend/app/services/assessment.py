@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from fastapi import HTTPException
 
-from app.models.models import Assessment
+from app.models.assessments import Assessment
 from app.schemas import AssessmentCreate
 
 

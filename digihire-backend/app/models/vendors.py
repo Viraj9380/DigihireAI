@@ -5,8 +5,7 @@ from sqlalchemy import (
     Integer,
 )
 from sqlalchemy.orm import relationship
-from app.database import Base
-
+from app.db.database import Base
 class Vendor(Base):
     __tablename__ = "vendors"
 

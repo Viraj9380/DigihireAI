@@ -22,3 +22,9 @@ class AssignVendorPayload(BaseModel):
     assessment_id: UUID
     vendor_id: int
     max_candidates: int
+
+
+class EditAssignVendorSchema(BaseModel):
+    assessment_id: UUID
+    vendor_id: int
+    max_candidates: int

@@ -15,13 +15,13 @@ class VendorCreate(VendorBase):
 
 
 class VendorOut(BaseModel):
-    id: str
-    name: str
-    email: str | None = None
+    id: int
+    vendor_name: str  # must match SQLAlchemy attribute
+    email: str
 
-    class Config:
-        orm_mode = True
-
+    model_config = {
+        "from_attributes": True  # V2 replacement for orm_mode
+    }
 
 class AssignVendor(BaseModel):
     candidate_id: UUID

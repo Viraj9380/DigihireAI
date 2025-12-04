@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import uuid4
 from app import schemas    # ✅ ADD THIS
 from app.schemas.vendor import VendorCreate
-from app.models.vendor import Vendor
+from app.models.vendors import Vendor
 
 def get_vendors(db: Session):
     return db.query(Vendor).all()

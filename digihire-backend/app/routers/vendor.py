@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
-from app.schemas.schemas2 import EditAssignVendorSchema
-from app.models.models import AssessmentVendor
-from app.database import get_db
-from app.schemas.schemas import VendorOut
+from app.schemas.vendor_assignment import EditAssignVendorSchema
+from app.models.assessment_vendor import AssessmentVendor
+from app.db.database import get_db
+from app.schemas.vendor import VendorOut
 from app.schemas.vendor_assignment import VendorAssignmentOut, VendorAssignmentCreate
-from app.crud.crud import (
+from app.services.vendor_assignment import (
     list_vendors,
     assign_vendor_to_assessment as crud_assign_vendor,
     get_vendor,

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import Base, engine
+from app.db.database import Base, engine
 from app.routers import candidate, vendor, assessment
 
 Base.metadata.create_all(bind=engine)
