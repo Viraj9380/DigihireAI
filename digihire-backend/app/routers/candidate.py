@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
-
 from app.db.database import get_db
 from app import models, schemas
 from app.schemas.candidate import CandidateResponse
