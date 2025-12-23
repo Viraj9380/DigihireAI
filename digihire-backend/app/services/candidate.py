@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from uuid import UUID 
 from app.utils.utils import compare_scores 
+from app.default_jd import DEFAULT_DESCRIPTION
 def get_candidates(db: Session):
     return db.query(Candidate).all()
 
@@ -76,12 +77,12 @@ def update_resume_and_score(db: Session, candidate_id: UUID, resume_url: str):
     if not candidate:
         return None
 
-    score = compare_scores(resume_url)   # compute score
+    # ✅ Pass job description into scoring function
+    score = compare_scores(resume_url, DEFAULT_DESCRIPTION)
 
     candidate.resume_path = resume_url
-    candidate.last_score = float(score)
+    candidate.last_score = f"{score}"   # cleaner UI format
 
     db.commit()
     db.refresh(candidate)
     return candidate
-

@@ -11,7 +11,6 @@ from app.services import candidate
 from app.services.candidate import list_candidates, create_multiple_candidates, delete_candidate 
 router = APIRouter(prefix="/candidates", tags=["Candidates"])
 
-
 @router.get("/", response_model=List[schemas.CandidateOut])
 def list_candidates(db: Session = Depends(get_db)):
     return list_candidates(db)
@@ -53,7 +52,7 @@ def delete_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
 @router.post("/upload", response_model=CandidateResponse)
 def upload_resume(candidate_id: UUID, resume_url: str, db: Session = Depends(get_db)):
     updated = update_resume_and_score(db, candidate_id, resume_url)
-    
+
     if not updated:
         raise HTTPException(status_code=404, detail="Candidate not found")
 

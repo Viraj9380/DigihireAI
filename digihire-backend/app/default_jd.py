@@ -1,11 +1,5 @@
 # app/default_jd.py
-DEFAULT_TITLE = "Software Engineer (Embedded/IoT)"
+DEFAULT_TITLE = "Front End Developer"
 DEFAULT_DESCRIPTION = """
-We are looking for an Embedded Systems and IoT Engineer with hands-on experience in:
-- Microcontroller programming (C, C++)
-- Python and Java for system-level and application code
-- MATLAB for data analysis and signal processing
-- Experience with MySQL or relational databases
-- Experience with IoT platforms like Blynk or similar
-- PCB testing and hardware-software integration
+A Front-End Developer responsible for building responsive, user-focused web applications using JavaScript, HTML, and CSS. The role includes developing scalable UI components, converting designs into functional interfaces, and optimizing performance across browsers and devices. The developer will collaborate with product, design, and data teams, integrate RESTful APIs, and contribute to full development cycles from ideation to deployment. Experience with React, testing tools like Selenium, UX principles, and Agile practices is required to deliver high-quality, engaging digital experiences.
 """
