@@ -164,13 +164,3 @@ export async function deleteAssignment(assessmentId, vendorId) {
 
 
 
-
-
-export async function submitCodingTest(assessmentId, payload) {
-  if (!assessmentId) {
-    throw new Error("assessmentId is missing");
-  }
-
-  const r = await client.post(`/coding/submit/${assessmentId}`, payload);
-  return r.data;
-}

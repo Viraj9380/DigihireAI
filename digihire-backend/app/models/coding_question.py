@@ -12,7 +12,7 @@ class CodingQuestion(Base):
 
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)
-
+    difficulty = Column(String(20), default="Medium")
     input_format = Column(Text)
     output_format = Column(Text)
     constraints = Column(Text)

@@ -44,8 +44,16 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/")
-def list_questions(db: Session = Depends(get_db)):
-    return db.query(CodingQuestion).order_by(CodingQuestion.created_at.desc()).all()
+def list_questions(
+    difficulty: str | None = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(CodingQuestion)
+
+    if difficulty:
+        query = query.filter(CodingQuestion.difficulty == difficulty)
+
+    return query.order_by(CodingQuestion.created_at.desc()).all()
 
 
 # ✅ FIXED ROUTE
