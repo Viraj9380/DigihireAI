@@ -1,4 +1,4 @@
-# app/models/models.py
+# app/models/models/candidates.py
 import uuid
 from datetime import datetime, timezone
 

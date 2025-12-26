@@ -1,9 +1,19 @@
 # app/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:Viraj%409380@localhost:5432/digihire_db")
+# ✅ load .env FIRST
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set in environment")
+
+print("✅ DATABASE IN USE:", DATABASE_URL)
+
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -15,8 +25,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-def init_db():
-    # import models to register metadata
-    import app.models  # noqa: F401
-    Base.metadata.create_all(bind=engine)

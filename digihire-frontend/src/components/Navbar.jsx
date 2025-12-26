@@ -1,3 +1,4 @@
+//digihire-frontend/src/components/Navbar.jsx
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../styles/app.css";
@@ -29,7 +30,7 @@ const Navbar = () => {
           Vendors
         </Link>
 
-        <Link to="/exercism" className={`nav-link ${isActive("/exercism")}`}>
+        <Link to="/tests" className={`nav-link ${isActive("/tests")}`}>
           Test Creation
         </Link>
 

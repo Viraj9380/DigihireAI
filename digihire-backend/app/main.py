@@ -6,10 +6,12 @@ from app.routers import candidate, vendor, assessment
 from app.routers import judge0
 from app.routers import coding_questions
 from app.routers import coding_execute, coding_tests
+from app.routers import mcq
 
 
 
-Base.metadata.create_all(bind=engine)
+
+#Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -30,6 +32,7 @@ app.include_router(judge0.router)
 app.include_router(coding_questions.router)
 app.include_router(coding_execute.router)
 app.include_router(coding_tests.router)
+app.include_router(mcq.router)
 
 @app.get("/")
 def root():
