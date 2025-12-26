@@ -14,6 +14,7 @@ router = APIRouter(prefix="/coding/questions", tags=["Coding Questions"])
 class QuestionCreate(BaseModel):
     title: str
     description: str
+    difficulty: str = "Medium"
     input_format: str = ""
     output_format: str = ""
     constraints: str = ""
@@ -28,6 +29,7 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
     question = CodingQuestion(
         title=payload.title,
         description=payload.description,
+        difficulty=payload.difficulty, 
         input_format=payload.input_format,
         output_format=payload.output_format,
         constraints=payload.constraints,

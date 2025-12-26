@@ -8,6 +8,7 @@ const API = "http://localhost:8000";
 export default function TestCreationPage() {
   const [tests, setTests] = useState([]);
   const [open, setOpen] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
   const navigate = useNavigate();
 
   const fetchTests = async () => {
@@ -19,16 +20,30 @@ export default function TestCreationPage() {
     fetchTests();
   }, []);
 
+  const showSuccess = (msg) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
   return (
     <div className="p-6">
-      <div className="flex justify-between mb-6">
+      <div className="flex justify-between mb-6 items-center">
         <h1 className="text-2xl font-bold">My Tests</h1>
-        <button
-          onClick={() => setOpen(true)}
-          className="bg-orange-500 text-white px-4 py-2 rounded"
-        >
-          Create New Test
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setOpen(true)}
+            className="bg-orange-500 text-white px-4 py-2 rounded"
+          >
+            Create New Test
+          </button>
+
+          {successMsg && (
+            <span className="text-green-600 text-sm font-medium">
+              ✔ {successMsg}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -76,9 +91,12 @@ export default function TestCreationPage() {
 
       {open && (
         <CreateTestModal
-          onClose={() => {
+          onClose={(created) => {
             setOpen(false);
-            fetchTests();
+            if (created) {
+              fetchTests();
+              showSuccess("Test created successfully");
+            }
           }}
         />
       )}

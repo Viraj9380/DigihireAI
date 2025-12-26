@@ -10,15 +10,22 @@ export default function CreateTestModal({ onClose }) {
   const [role, setRole] = useState("");
   const navigate = useNavigate();
 
-  const createTest = async () => {
+const createTest = async () => {
+  try {
     const res = await axios.post(`${API}/coding/tests`, {
       title,
       job_role: mode === "job" ? role : null
     });
 
-    onClose();
-    navigate(`/my-questions/${res.data.id}`);
-  };
+    onClose(true);
+
+    if (mode === "custom") {
+      navigate(`/my-questions/${res.data.id}`);
+    }
+  } catch {
+    onClose(false);
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center">

@@ -54,3 +54,22 @@ def add_questions(
 
     return {"added": len(question_ids)}
 
+@router.post("/{test_id}/remove-questions")
+def remove_questions(
+    test_id: UUID,
+    question_ids: List[str],
+    db: Session = Depends(get_db)
+):
+    test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
+
+    if not test:
+        return {"error": "Test not found"}
+
+    # remove selected ids
+    test.coding_question_ids = [
+        qid for qid in test.coding_question_ids
+        if qid not in question_ids
+    ]
+
+    db.commit()
+    return {"removed": len(question_ids)}

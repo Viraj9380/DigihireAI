@@ -102,11 +102,14 @@ for i in range(1, n + 1):
 
 print(fact)
 
-
+suss sig
 
 
 add more in detailed questions -> assessmemt env : history etc,imocha replication
 
 coding question with numbering (id) pass  _> testcase -> result , \
-created and updated time both, number of questions: seperate -> coding and mcq, table name: test
+created and updated time both, number of questions: seperate -> coding and mcq, table name: test, dropdown for difficulty level of questions
   
+
+
+model: tests

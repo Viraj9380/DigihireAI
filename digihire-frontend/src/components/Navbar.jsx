@@ -29,7 +29,7 @@ const Navbar = () => {
           Vendors
         </Link>
 
-        <Link to="/exercism" className={`nav-link ${isActive("/exercism")}`}>
+        <Link to="/tests" className={`nav-link ${isActive("/tests")}`}>
           Test Creation
         </Link>
 
