@@ -1,3 +1,4 @@
+// src/pages/TestCreationPage.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import CreateTestModal from "../components/CreateTestModal";
@@ -83,6 +84,13 @@ export default function TestCreationPage() {
                 >
                   View Questions
                 </button>
+                <button
+                  onClick={() => navigate(`/test/${t.id}/instructions`)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                >
+                  Give Test
+                </button>
+
               </div>
             </div>
           </div>

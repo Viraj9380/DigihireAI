@@ -8,36 +8,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 uvicorn app.main:app --reload
 
 
-assesment_can : score
 
 
-company id: int 
-user id 
-
-
-score: percent
-Ui heading
-score display on Ui
-Delete icon
-
-
-display vendors table
-
-getAssignedVendors(selectedAssessment?.id)
-
-
-
-vendor count display
-
-routes, service, repos, schema,
-
-
-new page : name, mail, assigned candidates, Table: restrict, (action: edit: limit max candidates, delete), Top right: popup : only filterd out(same as assessment assign) 
-
-
-
-
-1.assigned vendors list
 
 
 
@@ -50,48 +22,10 @@ Client Id: ab897c3807e04c4c45555010146ddd4776857b7770b8.api.hackerearth.com
 
 Client Secret Key: 748fbf60b8ec53084cc492a2659aa3750435a0f0
 
-Quota
-Run: 1000 | Used: 0
-
-Compile: 1000 | Used: 0
-
-
-
-Take keywords from 
 
 
 
 
-(Main focus on JD 
-extract from jd (keywords) seperation
-And then match with resume)
-
-
-<div className="mb-4 text-sm">
-              <span className="font-medium">Assigned Vendors:</span>
-              <span className="ml-2 font-semibold text-gray-800">
-                {assignedCounts[a.id || a.assessment_id] ?? 0}
-              </span>
-            </div>
-
-
-
-JD text ----------------> TF-IDF phrases -----> split & normalize -----> core tech tokens
-                                                           |
-                                                           v
-Resume text --------> clean & chunk --------> direct match or embedding match
-                                                           |
-                                                           v
-                       Compute scores: core + keywords + semantic + experience
-                                                           |
-                                                           v
-                            Apply ATS penalty and clip 0–100
-                                                           |
-                                                           v
-                                                Final integer score
-
-flow, IAM, how they give test?, login management
-api fching eval
 
 
 n = int(input().strip())
@@ -102,14 +36,53 @@ for i in range(1, n + 1):
 
 print(fact)
 
-suss sig
 
 
-add more in detailed questions -> assessmemt env : history etc,imocha replication
+add more in detailed questions -> assessmemt env : history etc, imocha replication
 
-coding question with numbering (id) pass  _> testcase -> result , \
-created and updated time both, number of questions: seperate -> coding and mcq, table name: test, dropdown for difficulty level of questions
+
   
+MYquestions: create questions, 
+
+candidate_id:sav test, linking to that id
 
 
-model: tests
+
+Warning
+During the test, you are not allowed to leave the test window.
+Your test will be discontinued if you try to leave the test window again.
+
+
+
+Proctoring
+
+
+
+
+
+
+Now we have to create a proper, well maintained, responsive and professional test environment for publishing the test. So create the proper test environment. Means we have created a test with added questions. Now student should be able to give that test. So create the page or environment for that specific test. Refer to attached images for test instructions which should be given before starting the test. The questions added already to that specific test should be given in test env in restricted test timing duration which is already set. The compilation, running and code saving logic is already built, just integrate it to make a professional test env. At last question, give submit button to submit the test and after submitting the test it should display the modal dialog window of successful submission of test. Also the submission or saving the test should be linked to the specific student_id who gave the test. Give full files backend + frontend files.
+
+
+
+
+
+
+
+
+
+# app/models/test_submission.py
+import uuid
+from sqlalchemy import Column, TIMESTAMP, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.sql import func
+from app.db.database import Base
+
+class TestSubmission(Base):
+    __tablename__ = "test_submissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    test_id = Column(UUID(as_uuid=True), ForeignKey("coding_tests.id"))
+    student_id = Column(UUID(as_uuid=True))
+    answers = Column(JSONB)  # { questionId: code }
+    submitted_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

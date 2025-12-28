@@ -12,6 +12,7 @@ class CodingTest(Base):
     title = Column(String, nullable=False)
 
     job_role = Column(String(100), nullable=True)  # null for custom tests
+    proctoring_mode = Column(String, default="NONE") 
 
     # 🔹 NEW: Separate question tracking
     coding_question_ids = Column(JSONB, default=list)  # coding question UUIDs
@@ -23,6 +24,7 @@ class CodingTest(Base):
     reports = Column(Integer, default=0)
 
     status = Column(String(20), default="Draft")  # Draft / Published
+    
 
     created_at = Column(
         TIMESTAMP(timezone=True),
