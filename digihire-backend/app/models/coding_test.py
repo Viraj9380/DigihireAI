@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, TIMESTAMP
+from sqlalchemy import Column, String, Integer, TIMESTAMP, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -22,6 +22,11 @@ class CodingTest(Base):
 
     invites = Column(Integer, default=0)
     reports = Column(Integer, default=0)
+    # ✅ NEW SETTINGS
+    allow_copy_paste = Column(Boolean, default=True)
+    terminate_on_violation = Column(Boolean, default=False)
+    max_violations = Column(Integer, default=0)
+    shuffle_questions = Column(Boolean, default=False)
 
     status = Column(String(20), default="Draft")  # Draft / Published
     

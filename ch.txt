@@ -48,13 +48,9 @@ candidate_id:sav test, linking to that id
 
 
 
-Warning
-During the test, you are not allowed to leave the test window.
-Your test will be discontinued if you try to leave the test window again.
 
-
-
-Proctoring
+Questions filter out based on technology
+invite candidates
 
 
 
@@ -62,27 +58,3 @@ Proctoring
 
 
 Now we have to create a proper, well maintained, responsive and professional test environment for publishing the test. So create the proper test environment. Means we have created a test with added questions. Now student should be able to give that test. So create the page or environment for that specific test. Refer to attached images for test instructions which should be given before starting the test. The questions added already to that specific test should be given in test env in restricted test timing duration which is already set. The compilation, running and code saving logic is already built, just integrate it to make a professional test env. At last question, give submit button to submit the test and after submitting the test it should display the modal dialog window of successful submission of test. Also the submission or saving the test should be linked to the specific student_id who gave the test. Give full files backend + frontend files.
-
-
-
-
-
-
-
-
-
-# app/models/test_submission.py
-import uuid
-from sqlalchemy import Column, TIMESTAMP, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.sql import func
-from app.db.database import Base
-
-class TestSubmission(Base):
-    __tablename__ = "test_submissions"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    test_id = Column(UUID(as_uuid=True), ForeignKey("coding_tests.id"))
-    student_id = Column(UUID(as_uuid=True))
-    answers = Column(JSONB)  # { questionId: code }
-    submitted_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

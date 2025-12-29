@@ -15,3 +15,4 @@ from .coding_question import CodingQuestion
 from .coding_submission import CodingSubmission
 from .coding_test import CodingTest
 from .test_submission import TestSubmission
+from .student import Student

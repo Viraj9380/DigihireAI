@@ -7,6 +7,7 @@ from app.routers import judge0
 from app.routers import coding_questions
 from app.routers import coding_execute, coding_tests
 from app.routers import test_env
+from app.routers import invite, student
 
 
 Base.metadata.create_all(bind=engine)
@@ -31,6 +32,8 @@ app.include_router(coding_questions.router)
 app.include_router(coding_execute.router)
 app.include_router(coding_tests.router)
 app.include_router(test_env.router)
+app.include_router(invite.router)
+app.include_router(student.router)
 
 @app.get("/")
 def root():

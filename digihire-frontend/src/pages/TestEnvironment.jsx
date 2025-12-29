@@ -19,6 +19,10 @@ export default function TestEnvironment() {
   const [results, setResults] = useState([]);
   const [customInput, setCustomInput] = useState("");
   const [status, setStatus] = useState("");
+  const [allowCopyPaste, setAllowCopyPaste] = useState(true);
+  const [terminateOnViolation, setTerminateOnViolation] = useState(false);
+  const [maxViolations, setMaxViolations] = useState(1);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [violations, setViolations] = useState(0);
@@ -36,11 +40,19 @@ export default function TestEnvironment() {
     const testsRes = await axios.get(`${API}/coding/tests`);
     const test = testsRes.data.find(t => t.id === testId);
     if (!test) return;
+    setAllowCopyPaste(test.allow_copy_paste !== false);
+    setTerminateOnViolation(!!test.terminate_on_violation);
+    setMaxViolations(test.max_violations || 1);
+    setShuffleQuestions(!!test.shuffle_questions);
     setProctoring(test.proctoring_mode || "NONE");
     const qRes = await axios.get(`${API}/coding/questions`);
     const matched = qRes.data.filter(q =>
       test.coding_question_ids.includes(q.id)
     );
+
+    if (test.shuffle_questions) {
+      matched = [...matched].sort(() => Math.random() - 0.5);
+    }
 
     setQuestions(matched);
     setTimeLeft(test.duration_minutes * 60);
@@ -69,6 +81,42 @@ export default function TestEnvironment() {
     const s = timeLeft % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
+
+  /* VIOLATION */
+  useEffect(() => {
+    if (!started) return;
+
+    const violation = () => {
+      setViolations(v => {
+        const next = v + 1;
+        setShowWarning(true);
+
+        if (terminateOnViolation && maxViolations > 0 && next >= maxViolations) {
+          submitTest();
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener("blur", violation);
+    return () => window.removeEventListener("blur", violation);
+  }, [started, terminateOnViolation, maxViolations]);
+
+   /* ================= COPY / PASTE BLOCK ================= */
+  useEffect(() => {
+    if (allowCopyPaste) return;
+
+    const block = e => e.preventDefault();
+    document.addEventListener("copy", block);
+    document.addEventListener("paste", block);
+    document.addEventListener("cut", block);
+
+    return () => {
+      document.removeEventListener("copy", block);
+      document.removeEventListener("paste", block);
+      document.removeEventListener("cut", block);
+    };
+  }, [allowCopyPaste]);
 
   /* ================= PROCTORING ================= */
   useEffect(() => {

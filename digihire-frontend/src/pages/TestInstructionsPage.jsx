@@ -47,14 +47,14 @@ export default function TestInstructionsPage() {
       </div>
 
       {/* INSTRUCTIONS */}
-      <h2 className="text-xl font-semibold mb-4">Instructions</h2>
+      <h2 className="text-xl font-semibold mb-4">Test Instructions</h2>
       <ol className="list-decimal ml-6 space-y-3 text-gray-700">
-        <li>This is a time-bound test.</li>
+        <li>It is a time-bound section and should be attempted within the allotted Section time.</li>
         <li>Do not refresh or close the browser.</li>
         <li>Tab switching is monitored.</li>
         <li>Questions are shown one at a time.</li>
         <li>Auto-submit happens when time expires.</li>
-        <li>Final submission cannot be undone.</li>
+        <li>Use the question pallete to view current question, Unanswered Questions, and Answered Questions.</li>
       </ol>
 
       <div className="text-center mt-12">

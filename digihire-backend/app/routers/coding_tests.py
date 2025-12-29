@@ -20,6 +20,16 @@ class AddQuestionsPayload(BaseModel):
     coding_question_ids: List[str] = []
     mcq_question_ids: List[str] = []
 
+
+class TestSettingsUpdate(BaseModel):
+    title: str | None = None
+    duration_minutes: int | None = None
+    allow_copy_paste: bool | None = None
+    terminate_on_violation: bool | None = None
+    max_violations: int | None = None
+    shuffle_questions: bool | None = None
+
+
 @router.post("/")
 def create_test(payload: TestCreate, db: Session = Depends(get_db)):
     test = CodingTest(
@@ -91,3 +101,22 @@ def delete_test(test_id: UUID, db: Session = Depends(get_db)):
         "message": "Test deleted successfully",
         "test_id": test_id
     }
+
+
+
+@router.put("/coding/tests/{test_id}")
+def update_test_settings(
+    test_id: str,
+    payload: TestSettingsUpdate,
+    db: Session = Depends(get_db)
+):
+    test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    for key, value in payload.dict(exclude_unset=True).items():
+        setattr(test, key, value)
+
+    db.commit()
+    db.refresh(test)
+    return test

@@ -15,6 +15,7 @@ import TestCreationPage from "./pages/TestCreationPage";
 import ViewQuestionsPage from "./pages/ViewQuestionsPage";
 import TestEnvironment from "./pages/TestEnvironment";
 import TestInstructionsPage from "./pages/TestInstructionsPage";
+import CandidateAuth from "./pages/CandidateAuth";
 // in your router config (example)
 
 
@@ -41,9 +42,11 @@ export default function App() {
           <Route path="/tests" element={<TestCreationPage />} />
           <Route path="/my-questions/:testId" element={<MyQuestionsPage />} />
           <Route path="/view-questions/:testId" element={<ViewQuestionsPage />} />
+          <Route path="/auth/:testId" element={<CandidateAuth />} />
 
           <Route path="/test/:testId/instructions" element={<TestInstructionsPage />} />
           <Route path="/test/:testId/start" element={<TestEnvironment />} />
+
 
 
 
