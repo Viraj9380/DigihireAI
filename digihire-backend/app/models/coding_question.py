@@ -1,6 +1,6 @@
 # app/models/coding_question.py
 import uuid
-from sqlalchemy import Column, String, Text, TIMESTAMP
+from sqlalchemy import Column, String, Text, TIMESTAMP, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -23,6 +23,8 @@ class CodingQuestion(Base):
 
     # ✅ FIXED NAME
     test_cases = Column(JSONB, nullable=False)
+    question_bank_id = Column(UUID(as_uuid=True),ForeignKey("question_banks.id"),nullable=True)
+
 
     created_at = Column(
         TIMESTAMP(timezone=True),

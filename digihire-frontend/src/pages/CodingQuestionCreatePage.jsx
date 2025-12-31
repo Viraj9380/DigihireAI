@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+//src/pages/CodingQuestionCreatePage.jsx
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8000";
@@ -24,6 +25,15 @@ export default function CodingQuestionCreatePage() {
   });
 
   const update = (k, v) => setForm({ ...form, [k]: v });
+  const [questionBanks, setQuestionBanks] = useState([]);
+
+
+  useEffect(() => {
+  axios.get(`${API_BASE}/question-banks`)
+    .then(res => setQuestionBanks(res.data));
+}, []);
+
+
 
   async function saveQuestion() {
     try {
@@ -61,6 +71,20 @@ export default function CodingQuestionCreatePage() {
         <option value="Medium">Medium</option>
         <option value="Hard">Hard</option>
       </select>
+
+    
+      <select
+  className="w-full p-3 border rounded"
+  onChange={(e) => update("question_bank_id", e.target.value)}
+>
+  <option value="">Select Question Bank</option>
+  {questionBanks.map(qb => (
+    <option key={qb.id} value={qb.id}>
+      {qb.name}
+    </option>
+  ))}
+</select>
+
 
       {/* Description */}
       <textarea

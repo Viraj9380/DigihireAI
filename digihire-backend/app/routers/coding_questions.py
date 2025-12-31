@@ -15,6 +15,7 @@ class QuestionCreate(BaseModel):
     title: str
     description: str
     difficulty: str = "Medium"
+    question_bank_id: str | None = None
     input_format: str = ""
     output_format: str = ""
     constraints: str = ""
@@ -30,6 +31,7 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
         title=payload.title,
         description=payload.description,
         difficulty=payload.difficulty, 
+        question_bank_id=payload.question_bank_id,
         input_format=payload.input_format,
         output_format=payload.output_format,
         constraints=payload.constraints,
@@ -48,12 +50,16 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
 @router.get("/")
 def list_questions(
     difficulty: str | None = None,
+    question_bank_id: str | None = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(CodingQuestion)
 
     if difficulty:
         query = query.filter(CodingQuestion.difficulty == difficulty)
+
+    if question_bank_id:
+        query = query.filter(CodingQuestion.question_bank_id == question_bank_id)
 
     return query.order_by(CodingQuestion.created_at.desc()).all()
 
