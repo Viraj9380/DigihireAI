@@ -1,3 +1,4 @@
+// src/pages/MyQuestionPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -40,6 +41,7 @@ export default function MyQuestionsPage() {
       params: {
         difficulty: difficulty || undefined,
         question_bank_id: questionBank || undefined,
+        system_only: false,
       },
     });
     setAllQuestions(res.data);

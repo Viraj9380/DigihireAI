@@ -21,6 +21,8 @@ class QuestionCreate(BaseModel):
     constraints: str = ""
     sample_input: str = ""
     sample_output: str = ""
+    is_system_generated: bool = False
+    technology: str | None = None
     examples: Optional[List[Dict[str, str]]] = []
     testcases: List[Dict[str, str]]
 
@@ -37,6 +39,8 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
         constraints=payload.constraints,
         sample_input=payload.sample_input,
         sample_output=payload.sample_output,
+        is_system_generated=payload.is_system_generated,
+        technology=payload.technology,
         examples=payload.examples,
         test_cases=payload.testcases,
     )
@@ -51,6 +55,8 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
 def list_questions(
     difficulty: str | None = None,
     question_bank_id: str | None = None,
+    technology: str | None = None,
+    system_only: bool | None = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(CodingQuestion)
@@ -60,6 +66,15 @@ def list_questions(
 
     if question_bank_id:
         query = query.filter(CodingQuestion.question_bank_id == question_bank_id)
+
+    if technology:
+        query = query.filter(CodingQuestion.technology == technology)
+
+    if system_only is True:
+        query = query.filter(CodingQuestion.is_system_generated == True)
+
+    if system_only is False:
+        query = query.filter(CodingQuestion.is_system_generated == False)
 
     return query.order_by(CodingQuestion.created_at.desc()).all()
 

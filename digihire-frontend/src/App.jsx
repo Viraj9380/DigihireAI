@@ -17,6 +17,8 @@ import TestEnvironment from "./pages/TestEnvironment";
 import TestInstructionsPage from "./pages/TestInstructionsPage";
 import CandidateAuth from "./pages/CandidateAuth";
 import QuestionBanksPage from "./pages/QuestionBanksPage";
+import TestDetailsPage from "./pages/TestDetailsPage";
+import DigiHireQuestionsPage from "./pages/DigiHireQuestionsPage";
 // in your router config (example)
 
 
@@ -42,12 +44,22 @@ export default function App() {
           <Route path="/coding/questions/:questionId/solve" element={<CodingQuestionSolvePage />} />
           <Route path="/tests" element={<TestCreationPage />} />
           <Route path="/my-questions/:testId" element={<MyQuestionsPage />} />
+          <Route path="/my-questions" element={<MyQuestionsPage />} />
           <Route path="/view-questions/:testId" element={<ViewQuestionsPage />} />
           <Route path="/auth/:testId" element={<CandidateAuth />} />
           <Route path="/question-banks" element={<QuestionBanksPage />} />
 
           <Route path="/test/:testId/instructions" element={<TestInstructionsPage />} />
           <Route path="/test/:testId/start" element={<TestEnvironment />} />
+          <Route path="/tests/:testId" element={<TestDetailsPage />} />
+
+          <Route path="/digihire-questions/:testId" element={<DigiHireQuestionsPage />}/>
+
+          
+
+
+
+          
 
 
 

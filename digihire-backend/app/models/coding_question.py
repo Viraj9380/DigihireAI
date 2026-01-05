@@ -1,6 +1,6 @@
 # app/models/coding_question.py
 import uuid
-from sqlalchemy import Column, String, Text, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, String, Text, TIMESTAMP, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -20,6 +20,8 @@ class CodingQuestion(Base):
     sample_input = Column(Text)
     sample_output = Column(Text)
     examples = Column(JSONB, nullable=True)
+    is_system_generated = Column(Boolean, default=False)
+    technology = Column(String(100), nullable=True)
 
     # ✅ FIXED NAME
     test_cases = Column(JSONB, nullable=False)

@@ -1,6 +1,6 @@
-# models/student.py
+#app/models/student.py
 from sqlalchemy import Column, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 import uuid
 from app.db.database import Base
 class Student(Base):
@@ -10,3 +10,5 @@ class Student(Base):
     full_name = Column(String)
     email = Column(String)
     test_id = Column(UUID)
+    access_start = Column(TIMESTAMP(timezone=True))
+    access_end = Column(TIMESTAMP(timezone=True))
