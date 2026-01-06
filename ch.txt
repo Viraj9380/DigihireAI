@@ -39,16 +39,22 @@ print(fact)
 
 
 
-auto submit
-invite page separate: entry save in database 
-students table verify
-
-invited on --- submitted at---
-
-test timing imocha
-
-save token to verify
 
 
-table name : test_candidates
+Snapshots
+Violations Column
+Analysis correction
+Git pull
+section 
+
+
+
+
+
+
+
+
+
+
+
 

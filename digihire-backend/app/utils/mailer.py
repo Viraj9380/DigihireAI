@@ -1,3 +1,4 @@
+#app/utils/mailer.py
 import smtplib
 import os
 from typing import List, Optional

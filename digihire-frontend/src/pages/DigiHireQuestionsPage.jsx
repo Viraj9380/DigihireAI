@@ -1,11 +1,14 @@
+// src/pages/DigiHireQuestionsPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
 const API = "http://localhost:8000";
 
-export default function DigiHireQuestionsPage() {
-  const { testId } = useParams();
+export default function DigiHireQuestionsPage({ testId: propTestId, isModal }) {
+  const params = useParams();
+  const testId = propTestId || params.testId;
+
 
   const [questions, setQuestions] = useState([]);
   const [technology, setTechnology] = useState("");
@@ -64,7 +67,8 @@ export default function DigiHireQuestionsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">DigiHire Questions</h1>
+      {!isModal && ( <h1 className="text-2xl font-bold mb-4">DigiHire Questions</h1> )}
+
 
       {/* FILTERS */}
       <div className="flex gap-4 mb-4">

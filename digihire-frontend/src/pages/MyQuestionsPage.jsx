@@ -5,8 +5,13 @@ import axios from "axios";
 
 const API = "http://localhost:8000";
 
-export default function MyQuestionsPage() {
-  const { testId } = useParams();
+
+
+
+export default function MyQuestionsPage({ testId: propTestId, isModal }) {
+  const params = useParams();
+  const testId = propTestId || params.testId;
+
   const navigate = useNavigate();
 
   const [allQuestions, setAllQuestions] = useState([]);
@@ -93,7 +98,7 @@ export default function MyQuestionsPage() {
   return (
     <div className="p-6">
       {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-4">My Questions</h1>
+      {!isModal && ( <h1 className="text-2xl font-bold mb-4">My Questions</h1>)}
 
       {/* TABS */}
       <div className="flex gap-6 border-b mb-6">

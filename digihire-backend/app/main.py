@@ -8,6 +8,9 @@ from app.routers import coding_questions
 from app.routers import coding_execute, coding_tests
 from app.routers import test_env
 from app.routers import invite, student, question_banks
+from app.routers import reports
+from app.routers import test_reports, test_analytics, question_insights
+from app.routers import analytics_analysis
 
 
 Base.metadata.create_all(bind=engine)
@@ -35,6 +38,13 @@ app.include_router(test_env.router)
 app.include_router(invite.router)
 app.include_router(student.router)
 app.include_router(question_banks.router)
+app.include_router(reports.router)
+app.include_router(test_reports.router)
+app.include_router(test_analytics.router)
+app.include_router(question_insights.router)
+app.include_router(analytics_analysis.router)
+
+
 @app.get("/")
 def root():
     return {"message": "DigiHire API Running"}

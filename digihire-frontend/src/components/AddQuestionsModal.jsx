@@ -5,7 +5,8 @@ export default function AddQuestionsModal({ onClose, onProceed }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-[500px] rounded p-6">
+      <div className="bg-white w-[620px] max-w-[90%] rounded-lg p-6">
+
         <h2 className="text-lg font-semibold mb-4">Add Questions</h2>
 
         <p className="text-sm font-medium mb-1">

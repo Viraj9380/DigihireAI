@@ -1,3 +1,4 @@
+# app/routers/test_env.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -6,7 +7,7 @@ from app.db.database import get_db
 from app.models.coding_test import CodingTest
 from app.models.coding_question import CodingQuestion
 from app.models.test_submission import TestSubmission
-
+from app.services.evaluate_test import evaluate_test
 router = APIRouter(prefix="/test-env", tags=["Test Environment"])
 
 class SubmitPayload(BaseModel):
@@ -39,5 +40,7 @@ def submit_test(
     )
     db.add(submission)
     db.commit()
+    db.refresh(submission)
+    evaluate_test(submission.id, db)
 
     return {"status": "submitted"}

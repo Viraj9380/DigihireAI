@@ -17,3 +17,5 @@ from .coding_test import CodingTest
 from .test_submission import TestSubmission
 from .student import Student
 from .question_bank import QuestionBank
+from .test_evaluation import TestEvaluation
+from .question_evaluation import QuestionEvaluation

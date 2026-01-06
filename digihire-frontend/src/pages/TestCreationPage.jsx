@@ -5,6 +5,12 @@ import { useNavigate } from "react-router-dom";
 import CreateTestModal from "../components/CreateTestModal";
 import InviteModal from "../components/InviteModal";
 import AddQuestionsModal from "../components/AddQuestionsModal";
+// NEW imports
+import MyQuestionsModal from "../components/MyQuestionsModal";
+import DigiHireQuestionsModal from "../components/DigiHireQuestionsModal";
+import ReportsTab from "../components/ReportsTab";
+import TestAnalytics from "../components/TestAnalytics";
+
 
 const API = "http://localhost:8000";
 
@@ -15,6 +21,10 @@ export default function TestCreationPage() {
   const [tests, setTests] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
   const [detailTab, setDetailTab] = useState("questions");
+  // NEW state
+  const [showMyQuestions, setShowMyQuestions] = useState(false);
+  const [showDigiHireQuestions, setShowDigiHireQuestions] = useState(false);
+
 
   const [openCreate, setOpenCreate] = useState(false);
   const [inviteTest, setInviteTest] = useState(null);
@@ -101,15 +111,17 @@ export default function TestCreationPage() {
       setSelectedTest(refreshed);
     };
 
-    const handleProceedAddQuestions = ({ library }) => {
-      setShowAddModal(false);
+    // REPLACE this function
+const handleProceedAddQuestions = ({ library }) => {
+  setShowAddModal(false);
 
-      if (library === "myQuestions") {
-        navigate(`/my-questions/${selectedTest.id}`);
-      } else {
-        navigate(`/digihire-questions/${selectedTest.id}`);
-      }
-    };
+  if (library === "myQuestions") {
+    setShowMyQuestions(true);
+  } else {
+    setShowDigiHireQuestions(true);
+  }
+};
+
 
     return (
       <div className="p-6">
@@ -125,20 +137,20 @@ export default function TestCreationPage() {
         </h1>
 
         <div className="flex gap-6 border-b mb-6">
-          {["questions", "invite", "settings"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setDetailTab(t)}
-              className={`pb-2 capitalize ${
-                detailTab === t
-                  ? "border-b-2 border-blue-600 font-semibold"
-                  : "text-gray-500"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+  {["questions", "invite", "reports", "analytics", "settings"].map((t) => (
+    <button
+      key={t}
+      onClick={() => setDetailTab(t)}
+      className={`pb-2 capitalize ${
+        detailTab === t
+          ? "border-b-2 border-blue-600 font-semibold"
+          : "text-gray-500"
+      }`}
+    >
+      {t}
+    </button>
+  ))}
+</div>
 
         {detailTab === "questions" && (
           <div>
@@ -270,6 +282,14 @@ export default function TestCreationPage() {
           </div>
         )}
 
+        {detailTab === "reports" && (
+  <ReportsTab testId={selectedTest.id} />
+)}
+
+{detailTab === "analytics" && (
+  <TestAnalytics testId={selectedTest.id} />
+)}
+
         {inviteTest && (
           <InviteModal
             test={inviteTest}
@@ -283,6 +303,30 @@ export default function TestCreationPage() {
             onProceed={handleProceedAddQuestions}
           />
         )}
+
+        
+{showMyQuestions && (
+  <MyQuestionsModal
+    testId={selectedTest.id}
+    onClose={() => {
+      setShowMyQuestions(false);
+      // auto refresh questions
+      setSelectedTest({ ...selectedTest });
+    }}
+  />
+)}
+
+{showDigiHireQuestions && (
+  <DigiHireQuestionsModal
+    testId={selectedTest.id}
+    onClose={() => {
+      setShowDigiHireQuestions(false);
+      // auto refresh questions
+      setSelectedTest({ ...selectedTest });
+    }}
+  />
+)}
+
       </div>
     );
   }
