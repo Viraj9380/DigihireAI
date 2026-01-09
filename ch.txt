@@ -42,19 +42,20 @@ print(fact)
 
 
 Snapshots
-Violations Column
+Violations Column :check all
 Analysis correction
-Git pull
-section 
+Code integration
+test student login temp uuid
 
 
 
 
 
 
+Now the test env should capture snapshots or screenshots and save them also to enhance the features. It should take or capture snapshots or screenshots in ongoing test when any window switch or violations occur. So that we can see the exact situation of violations. Set the limit of capturing snapshots to 5. Means it should take maximum 5 snapshots in a test. Then in Analysis tab, it should display 4 types of analysis in pictorial, graphical and impressive way: Score Analysis with gauge meter, Section Analysis, Skill Analysis, Difficulty Analysis, Proctoring Analysis, Test Log (appeared on, evaluated on, report generated on etc details about test log). Refer the attached images for score and proctoring analysis and test log. We have already fetched data in pdf report generation process. Strictly represent the accurate data in pictorial, graphical and impressive way. In Proctoring analysis section, give a small view icon above the pictorial data. On clicking on that icon, it should open a small dialog where we should see the captured snapshots. Means display the captured images in proper format at that dialog of view icon. Also in Violations Column at Reports tab, it should display the accurate flag. Right now it is showing green flag to test which have 4+ violations. So in overall, fetch the accurate data. Refer all the current logic. Update or extend it, dont change it.
 
 
 
-
+Right now we have all coding test and questions logic. Here's all the mcq questions logic. Refer and integrate it with current logic to make it integrated system. Dont change the current logic, just extend it.
 
 

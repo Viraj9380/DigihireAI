@@ -19,3 +19,4 @@ from .student import Student
 from .question_bank import QuestionBank
 from .test_evaluation import TestEvaluation
 from .question_evaluation import QuestionEvaluation
+from .mcq_question import MCQQuestion

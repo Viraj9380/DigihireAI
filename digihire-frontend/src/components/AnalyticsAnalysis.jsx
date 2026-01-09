@@ -1,160 +1,239 @@
-// src/components/AnalyticsAnalysis.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie,
-  RadarChart, Radar, XAxis, YAxis, Tooltip,
-  PolarGrid, PolarAngleAxis, ResponsiveContainer,
-  ScatterChart, Scatter
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
 } from "recharts";
+import { Eye, X } from "lucide-react";
 
 const API = "http://localhost:8000";
 
+const LEVEL_COLORS = {
+  Beginner: "#ef4444",
+  Intermediate: "#f59e0b",
+  Experienced: "#3b82f6",
+  Proficient: "#10b981"
+};
+
 export default function AnalyticsAnalysis({ testId }) {
   const [data, setData] = useState(null);
+  const [showSnapshots, setShowSnapshots] = useState(false);
 
   useEffect(() => {
     axios
       .get(`${API}/coding/tests/${testId}/analytics`)
-      .then((res) => setData(res.data))
-      .catch((err) => {
-        console.error("Error fetching analytics:", err);
-        setData({});
-      });
+      .then(res => setData(res.data))
+      .catch(() => setData(null));
   }, [testId]);
 
-  if (!data) return <p>Loading analytics…</p>;
+  if (!data) {
+    return <p className="text-sm text-gray-500">Loading analytics…</p>;
+  }
 
-  // --- Difficulty Analysis ---
-  const difficultyRows = Object.entries(data.difficulty_analysis || {}).map(
-    ([level, v]) => ({
-      level,
-      questions: v?.questions || 0,
-      correct: v?.correct || 0,
-      percentage: v?.percentage || 0,
+  const score = Math.round(data.avg_score || 0);
+  const scoreLevel =
+    score <= 25 ? "Beginner" :
+    score <= 50 ? "Intermediate" :
+    score <= 75 ? "Experienced" :
+    "Proficient";
+
+  const gaugeData = [{ value: score }, { value: 100 - score }];
+
+  const sectionData = Object.entries(data.section_analysis || {}).map(
+    ([name, scores]) => ({
+      name,
+      score: Math.round(
+        (scores.reduce((a, b) => a + b, 0) / (scores.length * 15)) * 100
+      )
     })
   );
-  const showDifficultyTable = difficultyRows.length > 0;
-  const difficultyChartData =
-    difficultyRows.length > 0 ? difficultyRows : [{ level: "N/A", percentage: 0 }];
 
-  // --- Skill Analysis ---
-  const skillData = Object.entries(data.skill_analysis || {}).map(([skill, value]) => ({
-    skill,
-    value: value || 0,
-  }));
-  const skillChartData = skillData.length > 0 ? skillData : [{ skill: "N/A", value: 0 }];
+  const skillData = Object.entries(data.skill_analysis || {}).map(
+    ([skill, scores]) => ({
+      skill,
+      value: Math.round(
+        (scores.reduce((a, b) => a + b, 0) / (scores.length * 15)) * 100
+      )
+    })
+  );
 
-  // --- Attempt Funnel ---
-  const attemptFunnel = data.attempt_funnel || null;
-  const attemptData = attemptFunnel
-    ? [
-        { name: "Total", value: attemptFunnel.total || 0 },
-        { name: "Attempted", value: attemptFunnel.attempted || 0 },
-        { name: "Correct", value: attemptFunnel.correct || 0 },
-      ]
-    : [];
-  const showAttemptFunnel = attemptFunnel && (attemptFunnel.total || attemptFunnel.attempted || attemptFunnel.correct);
+  const difficultyData = Object.entries(data.difficulty_analysis || {}).map(
+    ([level, obj]) => ({
+      level,
+      accuracy: obj.percentage || 0
+    })
+  );
 
-  // --- Time vs Score ---
-  const timeScoreMap = Array.isArray(data.time_score_map) ? data.time_score_map : [];
+  const proctoring = data.proctoring || {};
+  const snapshots = proctoring.snapshots || [];
+  const testLog = data.test_log || {};
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
-      {/* Score Summary */}
-      <Card title="Score Summary">
-        <div className="text-2xl font-bold">
-          {data.avg_score ?? 0}% | Avg Time: {data.avg_time ?? 0}s
+      {/* SCORE */}
+      <Card title="Score Analysis">
+        <div className="grid grid-cols-2 gap-6 items-center">
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={gaugeData}
+                startAngle={180}
+                endAngle={0}
+                innerRadius={70}
+                outerRadius={100}
+                dataKey="value"
+              >
+                <Cell fill={LEVEL_COLORS[scoreLevel]} />
+                <Cell fill="#e5e7eb" />
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div>
+            <p className="text-3xl font-bold">{score}%</p>
+            <p className="text-sm text-gray-600">{scoreLevel}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Avg Time: {data.avg_time}s
+            </p>
+            <p className="text-xs text-gray-500">
+              Integrity Score: {data.integrity_score}%
+            </p>
+          </div>
         </div>
       </Card>
 
-      {/* Difficulty Table */}
-      <Card title="Difficulty Level Analysis">
+      <ChartCard title="Section Analysis">
+        <BarChart data={sectionData}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="score" fill="#6366f1" />
+        </BarChart>
+      </ChartCard>
+
+      <ChartCard title="Skill Analysis">
+        <RadarChart data={skillData}>
+          <PolarGrid />
+          <PolarAngleAxis dataKey="skill" />
+          <Radar dataKey="value" fill="#22c55e" fillOpacity={0.6} />
+        </RadarChart>
+      </ChartCard>
+
+      <ChartCard title="Difficulty Analysis">
+        <BarChart data={difficultyData}>
+          <XAxis dataKey="level" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="accuracy" fill="#f97316" />
+        </BarChart>
+      </ChartCard>
+
+      <Card title="Proctoring Analysis">
+        <div className="flex justify-between">
+          <div className="text-sm space-y-1">
+            <p><b>Snapshots:</b> {snapshots.length}</p>
+            <p><b>Window Violations:</b> {proctoring.window_violations || 0}</p>
+            <p><b>Time Violations:</b> {proctoring.time_violations || 0}</p>
+          </div>
+
+          {snapshots.length > 0 && (
+            <button
+              className="flex items-center gap-1 text-blue-600"
+              onClick={() => setShowSnapshots(true)}
+            >
+              <Eye size={16} /> View
+            </button>
+          )}
+        </div>
+      </Card>
+
+      <Card title="Test Log">
         <table className="w-full text-sm border">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2">Level</th>
-              <th>#Questions</th>
-              <th>Correct</th>
-              <th>Accuracy</th>
-            </tr>
-          </thead>
           <tbody>
-            {showDifficultyTable ? (
-              difficultyRows.map((d) => (
-                <tr key={d.level} className="border-t">
-                  <td className="p-2">{d.level}</td>
-                  <td>{d.questions}</td>
-                  <td>{d.correct}</td>
-                  <td>{d.percentage}%</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="text-center p-2 text-gray-500">
-                  No difficulty data available
-                </td>
-              </tr>
-            )}
+            <tr className="border-t">
+              <td className="p-2 font-medium">Appeared On</td>
+              <td className="p-2">{formatDate(testLog.appeared_on)}</td>
+            </tr>
+            <tr className="border-t">
+              <td className="p-2 font-medium">Completed On</td>
+              <td className="p-2">{formatDate(testLog.completed_on)}</td>
+            </tr>
           </tbody>
         </table>
       </Card>
 
-      {/* Difficulty Curve */}
-      <ChartCard title="Difficulty Curve">
-        <LineChart data={difficultyChartData}>
-          <XAxis dataKey="level" />
-          <YAxis />
-          <Tooltip />
-          <Line dataKey="percentage" stroke="#8884d8" strokeWidth={2} />
-        </LineChart>
-      </ChartCard>
-
-      {/* Skill Radar */}
-      <ChartCard title="Skill Radar">
-        <RadarChart data={skillChartData}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="skill" />
-          <Radar dataKey="value" fill="#82ca9d" fillOpacity={0.6} />
-        </RadarChart>
-      </ChartCard>
-
-      {/* Attempt Funnel */}
-      <ChartCard title="Attempt Funnel">
-        {showAttemptFunnel ? (
-          <PieChart>
-            <Pie data={attemptData} dataKey="value" label />
-            <Tooltip />
-          </PieChart>
-        ) : (
-          <div className="text-center py-10 text-gray-500">No attempt funnel data available</div>
-        )}
-      </ChartCard>
-
-      {/* Time vs Score */}
-      <ChartCard title="Time vs Score">
-        {timeScoreMap.length > 0 ? (
-          <ScatterChart>
-            <XAxis dataKey="time" />
-            <YAxis dataKey="score" />
-            <Tooltip />
-            <Scatter data={timeScoreMap} fill="#8884d8" />
-          </ScatterChart>
-        ) : (
-          <div className="text-center py-10 text-gray-500">No time vs score data available</div>
-        )}
-      </ChartCard>
-
-      {/* Integrity Score */}
-      <Card title="Integrity Score">
-        <div className="text-3xl font-bold">{data.integrity_score ?? 0}/100</div>
-      </Card>
+      {showSnapshots && (
+        <SnapshotDialog
+          snapshots={snapshots}
+          onClose={() => setShowSnapshots(false)}
+        />
+      )}
     </div>
   );
 }
 
-// --- Card Components ---
+/* ================= SNAPSHOT DIALOG (FULLSCREEN) ================= */
+function SnapshotDialog({ snapshots, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black/80 z-50">
+      <div className="absolute inset-0 flex flex-col bg-white">
+
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h3 className="text-lg font-semibold">
+            Proctoring Snapshots ({snapshots.length})
+          </h3>
+          <button onClick={onClose}>
+            <X size={22} />
+          </button>
+        </div>
+
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {snapshots.map((s, i) => (
+              <div key={i} className="border rounded-lg overflow-hidden">
+                <div className="p-3 text-sm bg-gray-50">
+                  <div className="font-medium">{s.type}</div>
+                  <div className="text-xs text-gray-500">
+                    {new Date(s.timestamp).toLocaleString()}
+                  </div>
+                </div>
+
+                {s.image?.startsWith("data:image") ? (
+                  <img
+                    src={s.image}
+                    alt="Proctoring Snapshot"
+                    className="w-full h-[260px] object-contain bg-black"
+                  />
+                ) : (
+                  <div className="h-[260px] flex items-center justify-center text-gray-500">
+                    Snapshot unavailable
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ================= UI HELPERS ================= */
 function Card({ title, children }) {
   return (
     <div className="bg-white border rounded p-6">
@@ -173,4 +252,9 @@ function ChartCard({ title, children }) {
       </ResponsiveContainer>
     </div>
   );
+}
+
+function formatDate(dt) {
+  if (!dt) return "—";
+  return new Date(dt).toLocaleString("en-GB");
 }

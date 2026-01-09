@@ -20,8 +20,8 @@ import QuestionBanksPage from "./pages/QuestionBanksPage";
 import TestDetailsPage from "./pages/TestDetailsPage";
 import DigiHireQuestionsPage from "./pages/DigiHireQuestionsPage";
 // in your router config (example)
-
-
+import MyMcqQuestionsPage from "./pages/MyMcqQuestionsPage";
+import ViewMcqQuestionsPage from "./pages/ViewMcqQuestionsPage";
 
 // src/index.js (or src/App.jsx)
 import "./styles/app.css";
@@ -54,6 +54,12 @@ export default function App() {
           <Route path="/tests/:testId" element={<TestDetailsPage />} />
 
           <Route path="/digihire-questions/:testId" element={<DigiHireQuestionsPage />}/>
+
+
+          <Route path="/coding/tests/:testId/questions" element={<MyMcqQuestionsPage />} />
+          <Route path="/coding/tests/:testId/questions/view" element={<ViewMcqQuestionsPage />} />
+
+
 
           
 

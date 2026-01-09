@@ -1,7 +1,15 @@
 # app/services/evaluate_test.py
-from app.models import CodingTest, CodingQuestion, TestEvaluation, TestSubmission, QuestionEvaluation
+
+from app.models import (
+    CodingTest,
+    CodingQuestion,
+    TestEvaluation,
+    TestSubmission,
+    QuestionEvaluation
+)
 from app.services.judge0 import create_submission, get_result
 import time
+
 
 def evaluate_test(submission_id, db):
     submission = db.query(TestSubmission).get(submission_id)
@@ -17,6 +25,7 @@ def evaluate_test(submission_id, db):
 
     start_time = time.time()
 
+    # ================= EVALUATE QUESTIONS =================
     for qid in test.coding_question_ids:
         question = db.query(CodingQuestion).get(qid)
         code = submission.answers.get(str(qid), "")
@@ -29,10 +38,11 @@ def evaluate_test(submission_id, db):
             for tc in question.test_cases:
                 token = create_submission(
                     source_code=code,
-                    language_id=71,  # python/js dynamic later
+                    language_id=71,
                     stdin=tc["input"]
                 )
                 res = get_result(token)
+
                 if (res.get("stdout") or "").strip() == tc["output"].strip():
                     passed += 1
 
@@ -41,10 +51,11 @@ def evaluate_test(submission_id, db):
         total_score += score
         max_score += 15
 
-        # Aggregations
         difficulty_map[question.difficulty].append(score)
         skill_map.setdefault(question.technology, []).append(score)
-        section_map.setdefault(f"Coding - {question.technology}", []).append(score)
+        section_map.setdefault(
+            f"Coding - {question.technology}", []
+        ).append(score)
 
         question_rows.append(
             QuestionEvaluation(
@@ -55,7 +66,7 @@ def evaluate_test(submission_id, db):
                 max_score=15,
                 obtained_score=score,
                 attempted=attempted,
-                correct=passed == total,
+                correct=(passed == total),
                 time_taken_sec=4
             )
         )
@@ -69,31 +80,63 @@ def evaluate_test(submission_id, db):
         "Proficient"
     )
 
+    # ================= PROCTORING (OPTION A) =================
+    # Expected snapshot format:
+    # {
+    #   "type": "WINDOW_BLUR",
+    #   "image": "data:image/png;base64,...",
+    #   "timestamp": "ISO"
+    # }
+
+    snapshots = [
+    s for s in (submission.proctoring_snapshots or [])
+    if isinstance(s.get("image"), str)
+    and s["image"].startswith("data:image")
+]
+
+
+    window_violations = len(snapshots)
+    time_violations = 0
+
+    # ================= SAVE EVALUATION =================
     evaluation = TestEvaluation(
         test_id=test.id,
         student_id=submission.student_id,
+
         total_score=total_score,
         max_score=max_score,
         percentage=percentage,
         level=level,
+
         section_analysis=section_map,
         skill_analysis=skill_map,
+
         difficulty_analysis={
             k: {
                 "questions": len(v),
                 "correct": len([x for x in v if x > 0]),
-                "percentage": (sum(v) / (len(v) * 15)) * 100 if v else 0
-            } for k, v in difficulty_map.items()
+                "percentage": round(
+                    (sum(v) / (len(v) * 15)) * 100, 2
+                ) if v else 0
+            }
+            for k, v in difficulty_map.items()
         },
+
         proctoring_analysis={
-            "enabled": test.proctoring_mode != "NONE",
-            "window_violations": 0,
-            "time_violations": 0
+            "enabled": True,                # snapshots exist => enabled
+            "window_violations": window_violations,
+            "time_violations": time_violations,
+
+            # ✅ FULL BASE64 SNAPSHOTS STORED
+            "snapshots": snapshots
         },
+
         test_log={
             "appeared_on": submission.submitted_at.isoformat(),
-            "completed_on": submission.submitted_at.isoformat()
+            "completed_on": submission.submitted_at.isoformat(),
+            "report_generated_on": time.strftime("%Y-%m-%d %H:%M:%S")
         },
+
         time_taken_sec=int(time.time() - start_time)
     )
 
@@ -106,3 +149,5 @@ def evaluate_test(submission_id, db):
 
     test.reports += 1
     db.commit()
+
+

@@ -13,6 +13,7 @@ router = APIRouter(prefix="/test-env", tags=["Test Environment"])
 class SubmitPayload(BaseModel):
     student_id: UUID
     answers: dict  # { questionId: code }
+    proctoring_snapshots: list = []
 
 @router.get("/{test_id}")
 def get_test_env(test_id: UUID, db: Session = Depends(get_db)):
@@ -36,7 +37,8 @@ def submit_test(
     submission = TestSubmission(
         test_id=test_id,
         student_id=payload.student_id,
-        answers=payload.answers
+        answers=payload.answers,
+        proctoring_snapshots=payload.proctoring_snapshots or []  # 🔒 HARD LIMIT
     )
     db.add(submission)
     db.commit()

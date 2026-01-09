@@ -13,3 +13,4 @@ class TestSubmission(Base):
     student_id = Column(UUID(as_uuid=True))
     answers = Column(JSONB)  # { questionId: code }
     submitted_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    proctoring_snapshots = Column(JSONB)

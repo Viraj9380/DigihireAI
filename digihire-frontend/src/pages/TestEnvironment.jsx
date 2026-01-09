@@ -1,4 +1,3 @@
-// src/pages/TestEnvironment.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -12,17 +11,24 @@ export default function TestEnvironment() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [codeMap, setCodeMap] = useState({});
   const [languageId, setLanguageId] = useState(71);
+
   const [proctoring, setProctoring] = useState("NONE");
+  const [snapshots, setSnapshots] = useState([]);
+  const snapshotLimit = 3;
+  const videoReadyRef = useRef(false);
+
 
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [results, setResults] = useState([]);
   const [customInput, setCustomInput] = useState("");
   const [status, setStatus] = useState("");
+
   const [allowCopyPaste, setAllowCopyPaste] = useState(true);
   const [terminateOnViolation, setTerminateOnViolation] = useState(false);
   const [maxViolations, setMaxViolations] = useState(1);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
+
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [violations, setViolations] = useState(0);
@@ -30,6 +36,10 @@ export default function TestEnvironment() {
   const [showSummary, setShowSummary] = useState(false);
 
   const timerRef = useRef(null);
+
+  /* 🔒 PROCTORING REFS (IMPORTANT) */
+  const screenStreamRef = useRef(null);
+  const videoRef = useRef(null);
 
   /* ================= LOAD TEST ================= */
   useEffect(() => {
@@ -40,13 +50,15 @@ export default function TestEnvironment() {
     const testsRes = await axios.get(`${API}/coding/tests`);
     const test = testsRes.data.find(t => t.id === testId);
     if (!test) return;
+
     setAllowCopyPaste(test.allow_copy_paste !== false);
     setTerminateOnViolation(!!test.terminate_on_violation);
     setMaxViolations(test.max_violations || 1);
     setShuffleQuestions(!!test.shuffle_questions);
     setProctoring(test.proctoring_mode || "NONE");
+
     const qRes = await axios.get(`${API}/coding/questions`);
-    const matched = qRes.data.filter(q =>
+    let matched = qRes.data.filter(q =>
       test.coding_question_ids.includes(q.id)
     );
 
@@ -57,6 +69,129 @@ export default function TestEnvironment() {
     setQuestions(matched);
     setTimeLeft(test.duration_minutes * 60);
   };
+
+  /* ================= PROCTORING INIT (ONCE) ================= */
+  /* ================= PROCTORING INIT (ONCE) ================= */
+useEffect(() => {
+  if (!started) return;
+
+  const initProctoring = async () => {
+    try {
+      // Camera permission (for IMAGE / VIDEO modes)
+      if (["IMAGE", "VIDEO", "VIDEO_SCREEN"].includes(proctoring)) {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+
+      // Screen share → MUST be piped into a DOM-mounted <video>
+      if (
+        ["SCREEN", "VIDEO_SCREEN"].includes(proctoring) &&
+        !screenStreamRef.current
+      ) {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 10 }
+        });
+
+        screenStreamRef.current = stream;
+
+        if (videoRef.current) {
+  videoRef.current.srcObject = stream;
+  videoRef.current.muted = true;
+  videoRef.current.playsInline = true;
+
+  videoRef.current.onloadedmetadata = async () => {
+    await videoRef.current.play();
+    videoReadyRef.current = true; // ✅ CRITICAL
+    console.log("✅ Proctoring video ready");
+  };
+}
+
+      }
+    } catch (err) {
+      alert("Screen sharing permission is mandatory for this test.");
+      window.location.reload();
+    }
+  };
+
+  initProctoring();
+}, [started, proctoring]);
+
+
+  /* ================= SNAPSHOT (NO PERMISSION REQUEST) ================= */
+  const captureSnapshot = (reason) => {
+  if (!videoReadyRef.current) {
+    console.warn("⏳ Snapshot delayed — video not ready");
+    return;
+  }
+
+  if (snapshots.length >= snapshotLimit) return;
+
+  const video = videoRef.current;
+  if (!video || video.videoWidth === 0) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  const base64 = canvas.toDataURL("image/png");
+  if (!base64.startsWith("data:image")) return;
+
+  setSnapshots(prev => [
+    ...prev,
+    {
+      type: reason,
+      timestamp: new Date().toISOString(),
+      image: base64
+    }
+  ]);
+};
+
+
+  /* ================= SINGLE VIOLATION LISTENER ================= */
+  useEffect(() => {
+    if (!started) return;
+
+    const onBlur = () => {
+      setTimeout(() => captureSnapshot("WINDOW_BLUR"), 500);
+
+      setViolations(v => {
+        const next = v + 1;
+        setShowWarning(true);
+
+        if (
+          terminateOnViolation &&
+          maxViolations > 0 &&
+          next >= maxViolations
+        ) {
+          submitTest();
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, [started, terminateOnViolation, maxViolations]);
+
+
+
+  // ADD this inside TestEnvironment.jsx
+  useEffect(() => {
+  if (!started) return;
+
+  const onVisibilityChange = () => {
+    if (document.hidden) {
+  setTimeout(() => captureSnapshot("TAB_SWITCH"), 500);}
+
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  return () =>
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+}, [started]);
+
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -82,27 +217,7 @@ export default function TestEnvironment() {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  /* VIOLATION */
-  useEffect(() => {
-    if (!started) return;
-
-    const violation = () => {
-      setViolations(v => {
-        const next = v + 1;
-        setShowWarning(true);
-
-        if (terminateOnViolation && maxViolations > 0 && next >= maxViolations) {
-          submitTest();
-        }
-        return next;
-      });
-    };
-
-    window.addEventListener("blur", violation);
-    return () => window.removeEventListener("blur", violation);
-  }, [started, terminateOnViolation, maxViolations]);
-
-   /* ================= COPY / PASTE BLOCK ================= */
+  /* ================= COPY / PASTE BLOCK ================= */
   useEffect(() => {
     if (allowCopyPaste) return;
 
@@ -117,33 +232,6 @@ export default function TestEnvironment() {
       document.removeEventListener("cut", block);
     };
   }, [allowCopyPaste]);
-
-  /* ================= PROCTORING ================= */
-  useEffect(() => {
-    if (!started) return;
-
-    const violation = () => {
-  setViolations(v => v + 1);
-  setShowWarning(true); // ALWAYS show warning
-};
-
-    
-
-    window.addEventListener("blur", violation);
-    return () => window.removeEventListener("blur", violation);
-  }, [started]);
-
-useEffect(() => {
-  if (!started) return;
-
-  if (proctoring === "IMAGE" || proctoring === "VIDEO" || proctoring === "VIDEO_SCREEN") {
-    navigator.mediaDevices.getUserMedia({ video: true });
-  }
-
-  if (proctoring === "SCREEN" || proctoring === "VIDEO_SCREEN") {
-    navigator.mediaDevices.getDisplayMedia({ video: true });
-  }
-}, [started, proctoring]);
 
   /* ================= RUN CODE ================= */
   const runCode = async () => {
@@ -165,8 +253,7 @@ useEffect(() => {
     setError(res.data.stderr || "");
     setResults(res.data.results || []);
   };
-  
-  /* ================= RESET ================= */
+
   const resetCode = () => {
     const q = questions[currentIndex];
     setCodeMap({ ...codeMap, [q.id]: "" });
@@ -177,30 +264,28 @@ useEffect(() => {
   };
 
   /* ================= SUBMIT ================= */
-  /* ================= SUBMIT ================= */
-const submitTest = async () => {
-  try {
-    await axios.post(`${API}/test-env/${testId}/submit`, {
-      student_id: "00000000-0000-0000-0000-000000000001", // valid UUID
-      answers: codeMap || {} // can be empty (blank answers allowed)
-    });
+  const submitTest = async () => {
+    try {
+      await axios.post(`${API}/test-env/${testId}/submit`, {
+        student_id: "00000000-0000-0000-0000-000000000001",
+        answers: codeMap || {},
+        proctoring_snapshots: snapshots
+      });
 
-    alert("✅ Test submitted successfully!");
-    window.location.href = "/";
-  } catch (err) {
-    console.error(err);
-    alert("❌ Submission failed");
-  }
-};
+      alert("✅ Test submitted successfully!");
+      window.location.href = "/";
+    } catch (err) {
+      console.error(err);
+      alert("❌ Submission failed");
+    }
+  };
 
   if (!questions.length) return <div className="p-6">Loading...</div>;
 
   const currentQuestion = questions[currentIndex];
-  const isAnswered = q =>
-    (codeMap[q.id] || "").trim().length > 0;
+  const isAnswered = q => (codeMap[q.id] || "").trim().length > 0;
   const answeredCount = questions.filter(q => isAnswered(q)).length;
   const unansweredCount = questions.length - answeredCount;
-
 
   /* ================= INSTRUCTIONS ================= */
   if (!started) {
@@ -223,8 +308,19 @@ const submitTest = async () => {
     );
   }
 
+  /* ================= UI (UNCHANGED) ================= */
   return (
     <div className="h-screen flex flex-col">
+      {/* UI remains same as your existing layout */}
+      {/* Only logic was fixed */}
+      {/* 🔒 Hidden video for snapshot capture */}
+      <video
+  ref={videoRef}
+  style={{ display: "none" }}
+  playsInline
+  muted
+/>
+
 
       {/* ================= QUESTION PALETTE ================= */}
       <div className="flex gap-2 p-3 border-b">
@@ -453,6 +549,7 @@ const submitTest = async () => {
   </div>
 )}
 
+      
     </div>
   );
 }

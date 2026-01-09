@@ -11,7 +11,7 @@ from app.routers import invite, student, question_banks
 from app.routers import reports
 from app.routers import test_reports, test_analytics, question_insights
 from app.routers import analytics_analysis
-
+from app.routers import mcq_questions
 
 Base.metadata.create_all(bind=engine)
 
@@ -40,9 +40,10 @@ app.include_router(student.router)
 app.include_router(question_banks.router)
 app.include_router(reports.router)
 app.include_router(test_reports.router)
-app.include_router(test_analytics.router)
+ #app.include_router(test_analytics.router)
 app.include_router(question_insights.router)
 app.include_router(analytics_analysis.router)
+app.include_router(mcq_questions.router)
 
 
 @app.get("/")
