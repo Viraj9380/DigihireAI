@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+//src/components/AnalyticsAnalysis.jsx
+import React, { useEffect, useState } from "react"; 
 import axios from "axios";
 import {
   PieChart,
@@ -50,22 +51,42 @@ export default function AnalyticsAnalysis({ testId }) {
 
   const gaugeData = [{ value: score }, { value: 100 - score }];
 
+  /* ================= FIXED SECTION ANALYSIS ================= */
   const sectionData = Object.entries(data.section_analysis || {}).map(
-    ([name, scores]) => ({
-      name,
-      score: Math.round(
-        (scores.reduce((a, b) => a + b, 0) / (scores.length * 15)) * 100
-      )
-    })
+    ([name, scores]) => {
+      const max = scores.reduce(
+        (sum, s) => sum + (s === 5 ? 5 : 15),
+        0
+      );
+
+      return {
+        name,
+        score: max === 0
+          ? 0
+          : Math.round(
+              (scores.reduce((a, b) => a + b, 0) / max) * 100
+            )
+      };
+    }
   );
 
+  /* ================= FIXED SKILL ANALYSIS ================= */
   const skillData = Object.entries(data.skill_analysis || {}).map(
-    ([skill, scores]) => ({
-      skill,
-      value: Math.round(
-        (scores.reduce((a, b) => a + b, 0) / (scores.length * 15)) * 100
-      )
-    })
+    ([skill, scores]) => {
+      const max = scores.reduce(
+        (sum, s) => sum + (s === 5 ? 5 : 15),
+        0
+      );
+
+      return {
+        skill,
+        value: max === 0
+          ? 0
+          : Math.round(
+              (scores.reduce((a, b) => a + b, 0) / max) * 100
+            )
+      };
+    }
   );
 
   const difficultyData = Object.entries(data.difficulty_analysis || {}).map(
@@ -190,7 +211,6 @@ function SnapshotDialog({ snapshots, onClose }) {
     <div className="fixed inset-0 bg-black/80 z-50">
       <div className="absolute inset-0 flex flex-col bg-white">
 
-        {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h3 className="text-lg font-semibold">
             Proctoring Snapshots ({snapshots.length})
@@ -200,7 +220,6 @@ function SnapshotDialog({ snapshots, onClose }) {
           </button>
         </div>
 
-        {/* CONTENT */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {snapshots.map((s, i) => (

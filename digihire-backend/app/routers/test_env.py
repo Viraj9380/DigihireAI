@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.models.coding_test import CodingTest
 from app.models.coding_question import CodingQuestion
 from app.models.test_submission import TestSubmission
+from app.models.mcq_question import MCQQuestion
 from app.services.evaluate_test import evaluate_test
 router = APIRouter(prefix="/test-env", tags=["Test Environment"])
 
@@ -19,13 +20,18 @@ class SubmitPayload(BaseModel):
 def get_test_env(test_id: UUID, db: Session = Depends(get_db)):
     test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
 
-    questions = db.query(CodingQuestion).filter(
+    coding_questions = db.query(CodingQuestion).filter(
         CodingQuestion.id.in_(test.coding_question_ids)
+    ).all()
+
+    mcq_questions = db.query(MCQQuestion).filter(
+        MCQQuestion.id.in_(test.mcq_question_ids)
     ).all()
 
     return {
         "test": test,
-        "questions": questions
+        "mcq_questions": mcq_questions,
+        "coding_questions": coding_questions
     }
 
 @router.post("/{test_id}/submit")

@@ -3,12 +3,12 @@ import axios from "axios";
 
 const API = "http://localhost:8000";
 
-export default function MyMcqQuestionsPage({ testId, onClose }) {
+export default function DigiHireMcqQuestionsPage({ testId, onClose }) {
   const [questions, setQuestions] = useState([]);
   const [selected, setSelected] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API}/mcq/questions?mine=true`)
+    axios.get(`${API}/mcq/questions?system=true`)
       .then(res => setQuestions(res.data));
   }, []);
 
@@ -21,14 +21,7 @@ export default function MyMcqQuestionsPage({ testId, onClose }) {
   };
 
   return (
-    <Modal title="My MCQ Questions" onClose={onClose}>
-      <button
-        onClick={() => window.location.href = "/mcq/questions/new"}
-        className="mb-3 bg-blue-600 text-white px-3 py-1 rounded"
-      >
-        Create MCQ Question
-      </button>
-
+    <Modal title="DigiHire MCQ Library" onClose={onClose}>
       {questions.map(q => (
         <div key={q.id} className="border p-2 flex gap-2">
           <input

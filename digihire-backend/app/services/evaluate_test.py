@@ -1,5 +1,4 @@
 # app/services/evaluate_test.py
-
 from app.models import (
     CodingTest,
     CodingQuestion,
@@ -8,6 +7,7 @@ from app.models import (
     QuestionEvaluation
 )
 from app.services.judge0 import create_submission, get_result
+from app.models.mcq_question import MCQQuestion
 import time
 
 
@@ -25,10 +25,12 @@ def evaluate_test(submission_id, db):
 
     start_time = time.time()
 
-    # ================= EVALUATE QUESTIONS =================
+    answers = submission.answers or {}
+
+    # ================= EVALUATE CODING QUESTIONS =================
     for qid in test.coding_question_ids:
         question = db.query(CodingQuestion).get(qid)
-        code = submission.answers.get(str(qid), "")
+        code = answers.get(str(qid), "")
 
         attempted = bool(code.strip())
         passed = 0
@@ -71,6 +73,42 @@ def evaluate_test(submission_id, db):
             )
         )
 
+    # ================= EVALUATE MCQ QUESTIONS (✅ FIXED) =================
+    for qid in test.mcq_question_ids:
+        question = db.query(MCQQuestion).get(qid)
+
+        # ✅ FIX: support BOTH storage formats
+        selected = (
+            answers.get(str(qid)) or
+            answers.get("mcq", {}).get(str(qid))
+        )
+
+        attempted = selected is not None
+        correct = attempted and selected == question.correct_option
+        score = 5 if correct else 0
+
+        total_score += score
+        max_score += 5
+
+        difficulty_map[question.difficulty].append(score)
+        skill_map.setdefault(question.technology, []).append(score)
+        section_map.setdefault("MCQ", []).append(score)
+
+        question_rows.append(
+            QuestionEvaluation(
+                question_id=question.id,
+                question_type="MCQ",
+                difficulty=question.difficulty,
+                skill=question.technology,
+                max_score=5,
+                obtained_score=score,
+                attempted=attempted,
+                correct=correct,
+                time_taken_sec=2
+            )
+        )
+
+    # ================= FINAL SCORE =================
     percentage = (total_score / max_score) * 100 if max_score else 0
 
     level = (
@@ -80,23 +118,46 @@ def evaluate_test(submission_id, db):
         "Proficient"
     )
 
-    # ================= PROCTORING (OPTION A) =================
-    # Expected snapshot format:
-    # {
-    #   "type": "WINDOW_BLUR",
-    #   "image": "data:image/png;base64,...",
-    #   "timestamp": "ISO"
-    # }
-
+    # ================= PROCTORING =================
     snapshots = [
-    s for s in (submission.proctoring_snapshots or [])
-    if isinstance(s.get("image"), str)
-    and s["image"].startswith("data:image")
-]
-
+        s for s in (submission.proctoring_snapshots or [])
+        if isinstance(s.get("image"), str)
+        and s["image"].startswith("data:image")
+    ]
 
     window_violations = len(snapshots)
     time_violations = 0
+
+    # ================= DIFFICULTY ANALYSIS =================
+    difficulty_analysis = {}
+
+    for level_name, scores in difficulty_map.items():
+        if not scores:
+            difficulty_analysis[level_name] = {
+                "questions": 0,
+                "correct": 0,
+                "percentage": 0
+            }
+            continue
+
+        max_possible = 0
+        correct_count = 0
+
+        for s in scores:
+            if s == 15:
+                max_possible += 15
+                correct_count += 1
+            elif s == 5:
+                max_possible += 5
+                correct_count += 1
+            else:
+                max_possible += 15 if s < 5 else 5
+
+        difficulty_analysis[level_name] = {
+            "questions": len(scores),
+            "correct": correct_count,
+            "percentage": round((sum(scores) / max_possible) * 100, 2)
+        }
 
     # ================= SAVE EVALUATION =================
     evaluation = TestEvaluation(
@@ -110,24 +171,12 @@ def evaluate_test(submission_id, db):
 
         section_analysis=section_map,
         skill_analysis=skill_map,
-
-        difficulty_analysis={
-            k: {
-                "questions": len(v),
-                "correct": len([x for x in v if x > 0]),
-                "percentage": round(
-                    (sum(v) / (len(v) * 15)) * 100, 2
-                ) if v else 0
-            }
-            for k, v in difficulty_map.items()
-        },
+        difficulty_analysis=difficulty_analysis,
 
         proctoring_analysis={
-            "enabled": True,                # snapshots exist => enabled
+            "enabled": True,
             "window_violations": window_violations,
             "time_violations": time_violations,
-
-            # ✅ FULL BASE64 SNAPSHOTS STORED
             "snapshots": snapshots
         },
 
@@ -149,5 +198,3 @@ def evaluate_test(submission_id, db):
 
     test.reports += 1
     db.commit()
-
-

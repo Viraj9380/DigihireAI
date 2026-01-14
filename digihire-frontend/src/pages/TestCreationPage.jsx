@@ -11,6 +11,12 @@ import DigiHireQuestionsModal from "../components/DigiHireQuestionsModal";
 import ReportsTab from "../components/ReportsTab";
 import TestAnalytics from "../components/TestAnalytics";
 
+import McqQuestionsTab from "../components/McqQuestionsTab";
+import AddMcqSourceModal from "../components/AddMcqSourceModal";
+import MyMcqQuestionsModal from "../components/MyMcqQuestionsModal";
+import DigiHireMcqQuestionsModal from "../components/DigiHireMcqQuestionsModal";
+
+
 
 const API = "http://localhost:8000";
 
@@ -34,6 +40,15 @@ export default function TestCreationPage() {
 
   // 🔹 NEW
   const [showAddModal, setShowAddModal] = useState(false);
+
+
+  const [mcqQuestions, setMcqQuestions] = useState([]);
+  const [selectedMcqs, setSelectedMcqs] = useState([]);
+
+  const [showAddMcqSource, setShowAddMcqSource] = useState(false);
+  const [showMyMcqs, setShowMyMcqs] = useState(false);
+  const [showDigiHireMcqs, setShowDigiHireMcqs] = useState(false);
+
 
   const fetchTests = async () => {
     const res = await axios.get(`${API}/coding/tests`);
@@ -70,6 +85,29 @@ export default function TestCreationPage() {
 
     loadQuestions();
   }, [selectedTest]);
+
+  useEffect(() => {
+  if (!selectedTest || detailTab !== "mcq") return;
+
+  const loadMcqs = async () => {
+    const [testRes, mcqRes] = await Promise.all([
+      axios.get(`${API}/coding/tests`),
+      axios.get(`${API}/mcq/questions`)
+    ]);
+
+    const test = testRes.data.find(t => t.id === selectedTest.id);
+
+    setMcqQuestions(
+      mcqRes.data.filter(q =>
+        test.mcq_question_ids?.includes(q.id)
+      )
+    );
+    setSelectedMcqs([]);
+  };
+
+  loadMcqs();
+}, [detailTab, selectedTest]);
+
 
   const saveSettings = async () => {
     await axios.put(`${API}/coding/tests/${selectedTest.id}`, selectedTest);
@@ -137,7 +175,7 @@ const handleProceedAddQuestions = ({ library }) => {
         </h1>
 
         <div className="flex gap-6 border-b mb-6">
-  {["questions", "invite", "reports", "analytics", "settings"].map((t) => (
+  {["questions", "mcq", "invite", "reports", "analytics", "settings"].map((t) => (
     <button
       key={t}
       onClick={() => setDetailTab(t)}
@@ -147,7 +185,7 @@ const handleProceedAddQuestions = ({ library }) => {
           : "text-gray-500"
       }`}
     >
-      {t}
+      {t === "mcq" ? "MCQ Questions" : t}
     </button>
   ))}
 </div>
@@ -204,6 +242,18 @@ const handleProceedAddQuestions = ({ library }) => {
             ))}
           </div>
         )}
+
+        {detailTab === "mcq" && (
+  <McqQuestionsTab
+    selectedTest={selectedTest}
+    mcqQuestions={mcqQuestions}
+    setMcqQuestions={setMcqQuestions}
+    selectedMcqs={selectedMcqs}
+    setSelectedMcqs={setSelectedMcqs}
+    onAddClick={() => setShowAddMcqSource(true)}
+  />
+)}
+
 
         {detailTab === "invite" && (
           <div>
@@ -326,6 +376,38 @@ const handleProceedAddQuestions = ({ library }) => {
     }}
   />
 )}
+
+
+{showAddMcqSource && (
+  <AddMcqSourceModal
+    onClose={() => setShowAddMcqSource(false)}
+    onMyMcqs={() => {
+      setShowAddMcqSource(false);
+      setShowMyMcqs(true);
+    }}
+    onDigiHire={() => {
+      setShowAddMcqSource(false);
+      setShowDigiHireMcqs(true);
+    }}
+  />
+)}
+
+{showMyMcqs && (
+  <MyMcqQuestionsModal
+    testId={selectedTest.id}
+    onClose={() => setShowMyMcqs(false)}
+    onAdded={() => setDetailTab("mcq")}
+  />
+)}
+
+{showDigiHireMcqs && (
+  <DigiHireMcqQuestionsModal
+    testId={selectedTest.id}
+    onClose={() => setShowDigiHireMcqs(false)}
+    onAdded={() => setDetailTab("mcq")}
+  />
+)}
+
 
       </div>
     );

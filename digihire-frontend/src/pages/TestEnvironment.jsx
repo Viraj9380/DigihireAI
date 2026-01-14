@@ -1,3 +1,4 @@
+//src/pages/TestEnvironment.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -35,11 +36,23 @@ export default function TestEnvironment() {
   const [showWarning, setShowWarning] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
+  const [section, setSection] = useState("MCQ"); // MCQ | CODING
+  const [mcqQuestions, setMcqQuestions] = useState([]);
+  const [codingQuestions, setCodingQuestions] = useState([]);
+
+  const [mcqAnswers, setMcqAnswers] = useState({});
+  const [sectionLocked, setSectionLocked] = useState(false);
+
+
   const timerRef = useRef(null);
 
   /* 🔒 PROCTORING REFS (IMPORTANT) */
   const screenStreamRef = useRef(null);
   const videoRef = useRef(null);
+
+
+
+  
 
   /* ================= LOAD TEST ================= */
   useEffect(() => {
@@ -47,28 +60,56 @@ export default function TestEnvironment() {
   }, []);
 
   const loadTest = async () => {
-    const testsRes = await axios.get(`${API}/coding/tests`);
-    const test = testsRes.data.find(t => t.id === testId);
-    if (!test) return;
+  const testsRes = await axios.get(`${API}/coding/tests`);
+  const test = testsRes.data.find(t => t.id === testId);
+  if (!test) return;
 
-    setAllowCopyPaste(test.allow_copy_paste !== false);
-    setTerminateOnViolation(!!test.terminate_on_violation);
-    setMaxViolations(test.max_violations || 1);
-    setShuffleQuestions(!!test.shuffle_questions);
-    setProctoring(test.proctoring_mode || "NONE");
+  // === Existing settings (UNCHANGED) ===
+  setAllowCopyPaste(test.allow_copy_paste !== false);
+  setTerminateOnViolation(!!test.terminate_on_violation);
+  setMaxViolations(test.max_violations || 1);
+  setShuffleQuestions(!!test.shuffle_questions);
+  setProctoring(test.proctoring_mode || "NONE");
 
-    const qRes = await axios.get(`${API}/coding/questions`);
-    let matched = qRes.data.filter(q =>
-      test.coding_question_ids.includes(q.id)
+  // === NEW: Load MCQ questions ===
+  let mcqs = [];
+  if (test.mcq_question_ids?.length) {
+    const mcqRes = await axios.get(`${API}/mcq/questions`);
+    mcqs = mcqRes.data.filter(q =>
+      test.mcq_question_ids.includes(q.id)
     );
 
     if (test.shuffle_questions) {
-      matched = [...matched].sort(() => Math.random() - 0.5);
+      mcqs = [...mcqs].sort(() => Math.random() - 0.5);
     }
+  }
 
-    setQuestions(matched);
-    setTimeLeft(test.duration_minutes * 60);
-  };
+  // === Existing: Load coding questions (UNCHANGED LOGIC) ===
+  const qRes = await axios.get(`${API}/coding/questions`);
+  let codingMatched = qRes.data.filter(q =>
+    test.coding_question_ids.includes(q.id)
+  );
+
+  if (test.shuffle_questions) {
+    codingMatched = [...codingMatched].sort(() => Math.random() - 0.5);
+  }
+
+  // === NEW: Section-wise setup ===
+  setMcqQuestions(mcqs);
+  setCodingQuestions(codingMatched);
+
+  // Start test with MCQs if present, else Coding
+  if (mcqs.length > 0) {
+    setSection("MCQ");
+    setQuestions(mcqs);
+  } else {
+    setSection("CODING");
+    setQuestions(codingMatched);
+  }
+
+  setTimeLeft(test.duration_minutes * 60);
+};
+
 
   /* ================= PROCTORING INIT (ONCE) ================= */
   /* ================= PROCTORING INIT (ONCE) ================= */
@@ -217,6 +258,16 @@ useEffect(() => {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  /* ================= QUESTION NAVIGATION (SECTION LOCK) ================= */
+const goToQuestion = (index) => {
+  if (index >= 0 && index < questions.length) {
+    setCurrentIndex(index);
+  }
+};
+
+
+
+
   /* ================= COPY / PASTE BLOCK ================= */
   useEffect(() => {
     if (allowCopyPaste) return;
@@ -268,7 +319,7 @@ useEffect(() => {
     try {
       await axios.post(`${API}/test-env/${testId}/submit`, {
         student_id: "00000000-0000-0000-0000-000000000001",
-        answers: codeMap || {},
+        answers: {coding: codeMap, mcq: mcqAnswers},
         proctoring_snapshots: snapshots
       });
 
@@ -283,16 +334,40 @@ useEffect(() => {
   if (!questions.length) return <div className="p-6">Loading...</div>;
 
   const currentQuestion = questions[currentIndex];
-  const isAnswered = q => (codeMap[q.id] || "").trim().length > 0;
+  const isAnswered = (q) => {
+  if (section === "MCQ") {
+    return mcqAnswers[q.id] !== undefined;
+  }
+  return (codeMap[q.id] || "").trim().length > 0;
+};
+
   const answeredCount = questions.filter(q => isAnswered(q)).length;
   const unansweredCount = questions.length - answeredCount;
+  // ===== MCQ counts =====
+  const totalMcqs = mcqQuestions.length;
+  const answeredMcqs = mcqQuestions.filter(q => mcqAnswers[q.id] !== undefined).length;
+
+// ===== Coding counts =====
+  const totalCoding = codingQuestions.length;
+  const answeredCoding = codingQuestions.filter(q => (codeMap[q.id] || "").trim().length > 0).length;
+
+// ===== Combined =====
+  const totalQuestionsAll = totalMcqs + totalCoding;
+  const answeredAll = answeredMcqs + answeredCoding;
+  const unansweredAll = totalQuestionsAll - answeredAll;
+
+  
 
   /* ================= INSTRUCTIONS ================= */
   if (!started) {
     return (
       <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-4">Test Instructions</h1>
-        <p>Total Questions: {questions.length}</p>
+        <h1 className="text-3xl font-bold mb-4">Test Details</h1>
+        
+        
+        <p>MCQs: {totalMcqs}</p>
+        <p>Coding Questions: {totalCoding}</p>
+        <p>Total Questions: {totalQuestionsAll}</p>
         <p>Duration: {Math.floor(timeLeft / 60)} minutes</p>
 
         <button
@@ -325,67 +400,145 @@ useEffect(() => {
       {/* ================= QUESTION PALETTE ================= */}
       <div className="flex gap-2 p-3 border-b">
         {questions.map((q, i) => (
-          <button
-            key={q.id}
-            onClick={() => setCurrentIndex(i)}
-            className={`w-9 h-9 rounded text-white ${
-  i === currentIndex
-    ? "bg-blue-600"
-    : isAnswered(q)
-    ? "bg-green-600"
-    : "bg-red-600"
-}`}
+  <button
+    key={q.id}
+    onClick={() => goToQuestion(i)}
+    className={`w-9 h-9 rounded text-white ${
+      i === currentIndex
+        ? "bg-blue-600"
+        : isAnswered(q)
+        ? "bg-green-600"
+        : "bg-red-600"
+    }`}
+  >
+    {i + 1}
+  </button>
+))}
 
-          >
-            {i + 1}
-          </button>
-        ))}
         <div className="ml-auto font-semibold">⏱ {formatTime()}</div>
       </div>
 
-      {/* ================= MAIN ================= */}
-      <div className="grid grid-cols-2 flex-1">
+    
+{/* ================= MAIN ================= */}
+<div
+  className={`flex-1 ${
+    section === "CODING" ? "grid grid-cols-2" : "flex justify-center"
+  }`}
+>
 
-        {/* ================= QUESTION PANEL ================= */}
-        <div className="p-6 overflow-y-auto space-y-6 border-r">
-          <h1 className="text-2xl font-bold">{currentQuestion.title}</h1>
+  {/* ================= MCQ SECTION ================= */}
+        {section === "MCQ" && (
+          <div className="p-6 w-full max-w-3xl">
+            <h1 className="text-xl font-bold">Question {currentIndex + 1}</h1>
+            <p className="mt-4 text-lg">{currentQuestion.question}</p>
 
-          <section>
-            <h2 className="font-semibold">Problem Statement</h2>
-            <p className="whitespace-pre-line">{currentQuestion.description}</p>
-          </section>
-
-          <section>
-            <h2 className="font-semibold">Input Format</h2>
-            <pre className="bg-gray-100 p-2">{currentQuestion.input_format}</pre>
-          </section>
-
-          <section>
-            <h2 className="font-semibold">Output Format</h2>
-            <pre className="bg-gray-100 p-2">{currentQuestion.output_format}</pre>
-          </section>
-
-          <section>
-            <h2 className="font-semibold">Constraints</h2>
-            <pre className="bg-gray-100 p-2">{currentQuestion.constraints}</pre>
-          </section>
-
-          {currentQuestion.examples?.length > 0 && (
-            <section>
-              <h2 className="font-semibold">Examples</h2>
-              {currentQuestion.examples.map((ex, i) => (
-                <div key={i} className="border p-3 mt-2">
-                  <p><b>Input:</b></p>
-                  <pre>{ex.input}</pre>
-                  <p><b>Output:</b></p>
-                  <pre>{ex.output}</pre>
-                </div>
+            <div className="mt-6 space-y-3">
+              {currentQuestion.options.map((opt, idx) => (
+                <label key={idx} className="flex gap-3 items-center border p-3 rounded">
+                  <input
+                    type="radio"
+                    checked={mcqAnswers[currentQuestion.id] === idx}
+                    onChange={() =>
+                      setMcqAnswers({ ...mcqAnswers, [currentQuestion.id]: idx })
+                    }
+                  />
+                  {opt}
+                </label>
               ))}
-            </section>
-          )}
-        </div>
+            </div>
 
-        {/* ================= COMPILER PANEL ================= */}
+            {/* NAVIGATION */}
+            <div className="flex justify-between mt-6">
+              <button
+                disabled={currentIndex === 0}
+                onClick={() => setCurrentIndex(i => i - 1)}
+              >
+                ← Prev
+              </button>
+
+              {currentIndex === mcqQuestions.length - 1 ? (
+                <div className="flex gap-3">
+                  <button
+                    className="bg-red-600 text-white px-4 py-2 rounded"
+                    onClick={() => setShowSummary(true)}
+                  >
+                    Submit
+                  </button>
+                  <button
+                    className="bg-green-600 text-white px-4 py-2 rounded"
+                    onClick={() => {
+                      setSection("CODING");
+                      setQuestions(codingQuestions);
+                      setCurrentIndex(0);
+                      setSectionLocked(true);
+                    }}
+                  >
+                    Proceed to Next Section →
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setCurrentIndex(i => i + 1)}>Next →</button>
+              )}
+            </div>
+          </div>
+        )}
+
+
+  {/* ================= CODING SECTION ================= */}
+  {section === "CODING" && (
+    <>
+      {/* ================= QUESTION PANEL ================= */}
+      <div className="p-6 overflow-y-auto space-y-6 border-r">
+        <h1 className="text-2xl font-bold">
+          {currentQuestion.title}
+        </h1>
+
+        <section>
+          <h2 className="font-semibold">Problem Statement</h2>
+          <p className="whitespace-pre-line">
+            {currentQuestion.description}
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-semibold">Input Format</h2>
+          <pre className="bg-gray-100 p-2">
+            {currentQuestion.input_format}
+          </pre>
+        </section>
+
+        <section>
+          <h2 className="font-semibold">Output Format</h2>
+          <pre className="bg-gray-100 p-2">
+            {currentQuestion.output_format}
+          </pre>
+        </section>
+
+        <section>
+          <h2 className="font-semibold">Constraints</h2>
+          <pre className="bg-gray-100 p-2">
+            {currentQuestion.constraints}
+          </pre>
+        </section>
+
+        {currentQuestion.examples?.length > 0 && (
+          <section>
+            <h2 className="font-semibold">Examples</h2>
+            {currentQuestion.examples.map((ex, i) => (
+              <div key={i} className="border p-3 mt-2">
+                <p><b>Input:</b></p>
+                <pre>{ex.input}</pre>
+                <p><b>Output:</b></p>
+                <pre>{ex.output}</pre>
+              </div>
+            ))}
+          </section>
+        )}
+      </div>
+
+
+
+      {/* ================= COMPILER PANEL ================= */}
         <div className="p-6 flex flex-col">
 
           <select
@@ -459,24 +612,33 @@ useEffect(() => {
     ← Prev
   </button>
 
-  <div className="flex gap-3">
-    <button
-  onClick={() => setShowSummary(true)}
-  className="bg-red-600 text-white px-4 py-2 rounded"
+  <button
+  disabled={currentIndex === questions.length - 1}
+  onClick={() => setCurrentIndex(i => i + 1)}
 >
-  Submit Test
+  Next →
 </button>
 
+  <button className="bg-red-600 text-white px-4 py-2 rounded" onClick={() => setShowSummary(true)}> Submit </button>
 
-    {currentIndex < questions.length - 1 && (
-      <button onClick={() => setCurrentIndex(i => i + 1)}>
-        Next →
-      </button>
-    )}
-  </div>
+  
 </div>
 
+
         </div>
+
+    
+    </>
+  )}
+
+  
+
+
+
+        
+
+        
+        
       </div>
       {/* ================= WARNING MODAL ================= */}
       {showWarning && (
@@ -499,6 +661,11 @@ useEffect(() => {
       )}
 
 
+
+      
+
+
+
       {/* ================= SUBMISSION SUMMARY ================= */}
 {showSummary && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -510,15 +677,25 @@ useEffect(() => {
 
       <div className="space-y-2 text-sm">
         <p>
-          <b>Total Questions:</b> {questions.length}
+          <b>Total Questions:</b> {totalQuestionsAll}
         </p>
         <p className="text-green-700">
-          <b>Answered:</b> {answeredCount}
+          <b>Answered:</b> {answeredAll}
         </p>
         <p className="text-red-700">
-          <b>Unanswered:</b> {unansweredCount}
+          <b>Unanswered:</b> {unansweredAll}
         </p>
         <p>
+
+        <p>
+          <b>MCQ Section:</b> {answeredMcqs}/{totalMcqs}
+        </p>
+
+        <p>
+          <b>Coding Section:</b> {answeredCoding}/{totalCoding}
+        </p>
+
+
           <b>Time Remaining:</b> {formatTime()}
         </p>
         <p className="text-orange-600">
@@ -553,3 +730,4 @@ useEffect(() => {
     </div>
   );
 }
+

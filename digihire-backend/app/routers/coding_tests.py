@@ -120,3 +120,43 @@ def update_test_settings(
     db.commit()
     db.refresh(test)
     return test
+
+
+
+
+
+# app/routers/coding_tests.py
+
+@router.post("/{test_id}/add-mcq-questions")
+def add_mcq_questions(
+    test_id: UUID,
+    question_ids: List[str],
+    db: Session = Depends(get_db)
+):
+    test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    existing = set(test.mcq_question_ids or [])
+    test.mcq_question_ids = list(existing.union(set(question_ids)))
+    db.commit()
+
+    return {"added": len(question_ids)}
+
+
+@router.post("/{test_id}/remove-mcq-questions")
+def remove_mcq_questions(
+    test_id: UUID,
+    question_ids: List[str],
+    db: Session = Depends(get_db)
+):
+    test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    test.mcq_question_ids = [
+        qid for qid in test.mcq_question_ids if qid not in question_ids
+    ]
+    db.commit()
+
+    return {"removed": len(question_ids)}

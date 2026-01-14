@@ -40,22 +40,52 @@ print(fact)
 
 
 
-
-Snapshots
 Violations Column :check all
 Analysis correction
 Code integration
 test student login temp uuid
+Settings tab correct
+
+
+
+Instrcutions page, submission summary
+Test_candidates
+Name email
+Token create: test_id, access create and end date time
+Access token save in db
+Sectionwise save: first save and then next (separate APIs)
+Invite: resend button, default currnt time if not set
 
 
 
 
 
+import jwt
+import uuid
+from datetime import datetime, timedelta
+from app.core.config import settings
 
-Now the test env should capture snapshots or screenshots and save them also to enhance the features. It should take or capture snapshots or screenshots in ongoing test when any window switch or violations occur. So that we can see the exact situation of violations. Set the limit of capturing snapshots to 5. Means it should take maximum 5 snapshots in a test. Then in Analysis tab, it should display 4 types of analysis in pictorial, graphical and impressive way: Score Analysis with gauge meter, Section Analysis, Skill Analysis, Difficulty Analysis, Proctoring Analysis, Test Log (appeared on, evaluated on, report generated on etc details about test log). Refer the attached images for score and proctoring analysis and test log. We have already fetched data in pdf report generation process. Strictly represent the accurate data in pictorial, graphical and impressive way. In Proctoring analysis section, give a small view icon above the pictorial data. On clicking on that icon, it should open a small dialog where we should see the captured snapshots. Means display the captured images in proper format at that dialog of view icon. Also in Violations Column at Reports tab, it should display the accurate flag. Right now it is showing green flag to test which have 4+ violations. So in overall, fetch the accurate data. Refer all the current logic. Update or extend it, dont change it.
+def generate_invite_token(email: str, candidate_id: str, assessment_candidate_id: str, company_id: str, expiry_days: int) -> tuple[str, str]:
+    """
+    Returns (jwt_token, jti).
+    expiry_days is passed from caller (company-specific).
+    """
+    jti = str(uuid.uuid4())
+    payload = {
+    "sub": "candidate_invite",
+    "email":str(email),
+    "cid": str(candidate_id),
+    "aci": str(assessment_candidate_id),
+    "coid": str(company_id),   # ✅ add this
+    "jti": jti,
+    "exp": datetime.utcnow() + timedelta(days=expiry_days),
+    "iat": datetime.utcnow(),
+}
+
+    token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return token, jti
 
 
 
-Right now we have all coding test and questions logic. Here's all the mcq questions logic. Refer and integrate it with current logic to make it integrated system. Dont change the current logic, just extend it.
 
 

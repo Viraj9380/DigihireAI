@@ -8,6 +8,7 @@ from app.models.test_evaluation import TestEvaluation
 from app.models.student import Student
 from app.models.coding_test import CodingTest
 from app.models.coding_question import CodingQuestion
+from app.models.mcq_question import MCQQuestion
 from app.models.question_evaluation import QuestionEvaluation
 from app.services.report_pdf import generate_report_pdf
 
@@ -32,10 +33,20 @@ def download_report(evaluation_id: UUID, db: Session = Depends(get_db)):
     )
 
     questions = []
+
     for q in question_rows:
-        cq = db.query(CodingQuestion).get(q.question_id)
+        # 🔀 Resolve question based on type
+        if q.question_type == "CODING":
+            cq = db.query(CodingQuestion).get(q.question_id)
+            title = cq.title if cq else "Coding Question"
+        elif q.question_type == "MCQ":
+            mq = db.query(MCQQuestion).get(q.question_id)
+            title = mq.question if mq else "MCQ Question"
+        else:
+            title = "Question"
+
         questions.append({
-            "title": cq.title if cq else "Question",
+            "title": title,
             "type": q.question_type,
             "difficulty": q.difficulty,
             "attempted": q.attempted,
