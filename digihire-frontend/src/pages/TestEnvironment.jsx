@@ -318,8 +318,12 @@ const goToQuestion = (index) => {
   const submitTest = async () => {
     try {
       await axios.post(`${API}/test-env/${testId}/submit`, {
-        student_id: "00000000-0000-0000-0000-000000000001",
-        answers: {coding: codeMap, mcq: mcqAnswers},
+        student_id: localStorage.getItem("student_id"),
+        // ✅ CRITICAL FIX
+      answers: {
+        ...codeMap,
+        ...mcqAnswers
+      },
         proctoring_snapshots: snapshots
       });
 

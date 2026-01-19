@@ -5,8 +5,6 @@ import { Download, Flag } from "lucide-react";
 
 const API = "http://localhost:8000";
 
-/* ================= VIOLATION HELPERS ================= */
-
 function getViolationColor(total) {
   if (total >= 5) return "text-red-600";
   if (total >= 3) return "text-yellow-500";
@@ -49,32 +47,7 @@ export default function ReportsTab({ testId }) {
             <th className="p-3 text-left">Score</th>
             <th className="p-3 text-left">Test Status</th>
             <th className="p-3 text-left">Proctoring</th>
-
-            {/* 🔴 NEW: VIOLATIONS HEADER */}
-            <th className="p-3 text-center relative group">
-              <div className="inline-flex items-center gap-1 cursor-default">
-                <Flag size={16} />
-                Violations
-              </div>
-
-              {/* Hover-only tooltip */}
-              <div className="absolute hidden group-hover:block bg-white border rounded shadow-md p-3 text-xs w-64 top-10 left-1/2 -translate-x-1/2 z-10">
-                <div className="font-semibold mb-2">Violations</div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Flag size={12} className="text-red-600" />
-                  5+ consecutive violation warnings
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Flag size={12} className="text-yellow-500" />
-                  3–5 consecutive violation warnings
-                </div>
-                <div className="flex items-center gap-2">
-                  <Flag size={12} className="text-green-600" />
-                  0–2 consecutive violation warnings
-                </div>
-              </div>
-            </th>
-
+            <th className="p-3 text-center">Violations</th>
             <th className="p-3 text-left">Appeared On</th>
             <th className="p-3 text-center">Actions</th>
           </tr>
@@ -82,18 +55,19 @@ export default function ReportsTab({ testId }) {
 
         <tbody>
           {reports.map((r) => (
-            <tr
-              key={r.evaluation_id}
-              className="border-t hover:bg-gray-50"
-            >
+            <tr key={r.evaluation_id} className="border-t hover:bg-gray-50">
               <td className="p-3">
                 <div className="font-medium">{r.name}</div>
                 <div className="text-gray-500">{r.email}</div>
               </td>
 
+              {/* ✅ FIXED SCORE */}
               <td className="p-3">
                 <div className="font-semibold">
-                  {r.score?.raw} ({r.score?.percentage}%)
+                  {r.score?.percentage ?? 0}%
+                </div>
+                <div className="text-xs text-gray-500">
+                  Accuracy
                 </div>
               </td>
 
@@ -103,7 +77,6 @@ export default function ReportsTab({ testId }) {
 
               <td className="p-3">{r.proctoring}</td>
 
-              {/* 🔴 NEW: VIOLATION FLAG */}
               <td className="p-3 text-center">
                 <ViolationFlag total={r.violations?.total || 0} />
               </td>
@@ -133,8 +106,6 @@ export default function ReportsTab({ testId }) {
     </div>
   );
 }
-
-/* ================= HELPERS ================= */
 
 function formatDate(dt) {
   return new Date(dt).toLocaleDateString("en-GB", {

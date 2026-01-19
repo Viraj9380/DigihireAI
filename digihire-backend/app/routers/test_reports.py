@@ -23,7 +23,11 @@ def get_test_reports(test_id: str, db: Session = Depends(get_db)):
             "evaluation_id": e.id,
             "name": s.full_name,
             "email": s.email,
-            "score": {"raw": f"{e.total_score}/{e.max_score}", "percentage": round(e.percentage, 2)},
+            "score": {
+                "percentage": round(e.percentage, 2),
+                "total": e.total_score,
+                "max": e.max_score
+            },
             "status": f"Evaluated on {e.test_log.get('completed_on')}",
             "proctoring": "Enabled" if e.proctoring_analysis.get("enabled") else "Disabled",
             "appeared_on": e.test_log.get("appeared_on"),

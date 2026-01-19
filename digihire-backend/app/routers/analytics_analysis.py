@@ -7,14 +7,11 @@ from app.models.test_evaluation import TestEvaluation
 
 router = APIRouter(prefix="/coding/tests", tags=["Analytics"])
 
-
 @router.get("/{test_id}/analytics")
 def analytics_analysis(test_id: str, db: Session = Depends(get_db)):
-    evaluations = (
-        db.query(TestEvaluation)
-        .filter(TestEvaluation.test_id == test_id)
-        .all()
-    )
+    evaluations = db.query(TestEvaluation).filter(
+        TestEvaluation.test_id == test_id
+    ).all()
 
     if not evaluations:
         return {
@@ -23,32 +20,25 @@ def analytics_analysis(test_id: str, db: Session = Depends(get_db)):
             "section_analysis": {},
             "skill_analysis": {},
             "difficulty_analysis": {},
-            "proctoring": {
-                "enabled": False,
-                "window_violations": 0,
-                "time_violations": 0,
-                "snapshots": []
-            },
-            "test_log": {},
             "integrity_score": 100
         }
 
-    # Using first evaluation (same logic as PDF)
+    avg_score = sum(e.percentage for e in evaluations) / len(evaluations)
+    avg_time = sum(e.time_taken_sec for e in evaluations) // len(evaluations)
+
     e = evaluations[0]
-
-    window = e.proctoring_analysis.get("window_violations", 0)
-    time = e.proctoring_analysis.get("time_violations", 0)
-    violations = window + time
-
-    integrity_score = max(100 - (violations * 10), 0)
+    violations = (
+        e.proctoring_analysis.get("window_violations", 0) +
+        e.proctoring_analysis.get("time_violations", 0)
+    )
 
     return {
-        "avg_score": round(e.percentage, 2),
-        "avg_time": e.time_taken_sec,
+        "avg_score": round(avg_score, 2),
+        "avg_time": avg_time,
         "section_analysis": e.section_analysis,
         "skill_analysis": e.skill_analysis,
         "difficulty_analysis": e.difficulty_analysis,
+        "integrity_score": max(100 - violations * 10, 0),
         "proctoring": e.proctoring_analysis,
-        "test_log": e.test_log,
-        "integrity_score": integrity_score
+        "test_log": e.test_log
     }

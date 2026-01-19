@@ -9,7 +9,7 @@ uvicorn app.main:app --reload
 
 
 
-
+viruisworking@gmail.com
 
 
 
@@ -40,22 +40,16 @@ print(fact)
 
 
 
-Violations Column :check all
-Analysis correction
-Code integration
-test student login temp uuid
-Settings tab correct
 
 
-
-Instrcutions page, submission summary
 Test_candidates
 Name email
 Token create: test_id, access create and end date time
 Access token save in db
 Sectionwise save: first save and then next (separate APIs)
 Invite: resend button, default currnt time if not set
-
+Analysis correction
+Settings tab correct
 
 
 
@@ -84,6 +78,20 @@ def generate_invite_token(email: str, candidate_id: str, assessment_candidate_id
 
     token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return token, jti
+
+
+
+
+
+
+
+
+
+
+
+Now at Invite tab, along with current logic, give small resend button. After pressing that button, a dialog window should be opened exactly same like current invite modal.
+The functionality of the Resend button should be all same like current but the main difference between them is if any student faced issues or exceeds time limit then the student will contact the team and the team means our invite modal should solve this problem with the help of resend button.
+Refer the current logic and update it.
 
 
 

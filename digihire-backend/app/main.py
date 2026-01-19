@@ -12,7 +12,7 @@ from app.routers import reports
 from app.routers import test_reports, test_analytics, question_insights
 from app.routers import analytics_analysis
 from app.routers import mcq_questions
-
+from app.routers import student_auth
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -44,6 +44,7 @@ app.include_router(test_reports.router)
 app.include_router(question_insights.router)
 app.include_router(analytics_analysis.router)
 app.include_router(mcq_questions.router)
+app.include_router(student_auth.router)
 
 
 @app.get("/")

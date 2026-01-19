@@ -1,4 +1,5 @@
 # app/services/evaluate_test.py
+import time
 from app.models import (
     CodingTest,
     CodingQuestion,
@@ -6,38 +7,45 @@ from app.models import (
     TestSubmission,
     QuestionEvaluation
 )
-from app.services.judge0 import create_submission, get_result
 from app.models.mcq_question import MCQQuestion
-import time
+from app.services.judge0 import create_submission, get_result
+
+MAX_CODING_SCORE = 15
+MAX_MCQ_SCORE = 5
 
 
 def evaluate_test(submission_id, db):
     submission = db.query(TestSubmission).get(submission_id)
     test = db.query(CodingTest).get(submission.test_id)
 
+    answers = submission.answers or {}
+
     total_score = 0
-    max_score = 0
+    max_score = (
+        len(test.coding_question_ids) * MAX_CODING_SCORE +
+        len(test.mcq_question_ids) * MAX_MCQ_SCORE
+    )
+
     question_rows = []
 
-    difficulty_map = {"Easy": [], "Medium": [], "Hard": []}
-    skill_map = {}
     section_map = {}
+    skill_map = {}
+    difficulty_map = {"Easy": [], "Medium": [], "Hard": []}
 
     start_time = time.time()
 
-    answers = submission.answers or {}
-
-    # ================= EVALUATE CODING QUESTIONS =================
+    # ================= CODING QUESTIONS =================
     for qid in test.coding_question_ids:
         question = db.query(CodingQuestion).get(qid)
         code = answers.get(str(qid), "")
 
-        attempted = bool(code.strip())
-        passed = 0
-        total = len(question.test_cases)
+        attempted = bool(code and code.strip())
+        total_tc = len(question.test_cases)
+        passed_tc = 0
+        testcase_results = []
 
         if attempted:
-            for tc in question.test_cases:
+            for idx, tc in enumerate(question.test_cases):
                 token = create_submission(
                     source_code=code,
                     language_id=71,
@@ -45,19 +53,35 @@ def evaluate_test(submission_id, db):
                 )
                 res = get_result(token)
 
-                if (res.get("stdout") or "").strip() == tc["output"].strip():
-                    passed += 1
+                actual = (res.get("stdout") or "").strip()
+                expected = tc["output"].strip()
+                passed = actual == expected
 
-        score = int((passed / total) * 15) if attempted else 0
+                if passed:
+                    passed_tc += 1
+
+                testcase_results.append({
+                    "index": idx + 1,
+                    "passed": passed,
+                    "expected": expected,
+                    "actual": actual
+                })
+
+        score = int((passed_tc / total_tc) * MAX_CODING_SCORE) if attempted else 0
+        correct = attempted and passed_tc == total_tc
 
         total_score += score
-        max_score += 15
 
-        difficulty_map[question.difficulty].append(score)
-        skill_map.setdefault(question.technology, []).append(score)
-        section_map.setdefault(
-            f"Coding - {question.technology}", []
-        ).append(score)
+        section = f"Coding - {question.technology or 'General'}"
+        section_map.setdefault(section, {"score": 0, "max": 0})
+        section_map[section]["score"] += score
+        section_map[section]["max"] += MAX_CODING_SCORE
+
+        skill_map.setdefault(question.technology or "General", {"score": 0, "max": 0})
+        skill_map[question.technology or "General"]["score"] += score
+        skill_map[question.technology or "General"]["max"] += MAX_CODING_SCORE
+
+        difficulty_map[question.difficulty].append((score, MAX_CODING_SCORE))
 
         question_rows.append(
             QuestionEvaluation(
@@ -65,34 +89,55 @@ def evaluate_test(submission_id, db):
                 question_type="CODING",
                 difficulty=question.difficulty,
                 skill=question.technology,
-                max_score=15,
+                max_score=MAX_CODING_SCORE,
                 obtained_score=score,
                 attempted=attempted,
-                correct=(passed == total),
-                time_taken_sec=4
+                correct=correct,
+                time_taken_sec=5,
+                testcase_summary={
+                    "total": total_tc,
+                    "passed": passed_tc,
+                    "results": testcase_results
+                }
             )
         )
 
-    # ================= EVALUATE MCQ QUESTIONS (✅ FIXED) =================
+    # ================= MCQ QUESTIONS =================
     for qid in test.mcq_question_ids:
         question = db.query(MCQQuestion).get(qid)
 
-        # ✅ FIX: support BOTH storage formats
-        selected = (
+        selected_raw = (
             answers.get(str(qid)) or
             answers.get("mcq", {}).get(str(qid))
         )
 
-        attempted = selected is not None
-        correct = attempted and selected == question.correct_option
-        score = 5 if correct else 0
+        attempted = selected_raw is not None
+        selected_option = None
+
+        if attempted:
+            if isinstance(selected_raw, int) or (
+                isinstance(selected_raw, str) and selected_raw.isdigit()
+            ):
+                idx = int(selected_raw)
+                if 0 <= idx < len(question.options):
+                    selected_option = question.options[idx]
+            elif isinstance(selected_raw, str):
+                selected_option = selected_raw.strip()
+
+        correct = attempted and selected_option == question.correct_option
+        score = MAX_MCQ_SCORE if correct else 0
 
         total_score += score
-        max_score += 5
 
-        difficulty_map[question.difficulty].append(score)
-        skill_map.setdefault(question.technology, []).append(score)
-        section_map.setdefault("MCQ", []).append(score)
+        section_map.setdefault("MCQ", {"score": 0, "max": 0})
+        section_map["MCQ"]["score"] += score
+        section_map["MCQ"]["max"] += MAX_MCQ_SCORE
+
+        skill_map.setdefault(question.technology or "General", {"score": 0, "max": 0})
+        skill_map[question.technology or "General"]["score"] += score
+        skill_map[question.technology or "General"]["max"] += MAX_MCQ_SCORE
+
+        difficulty_map[question.difficulty].append((score, MAX_MCQ_SCORE))
 
         question_rows.append(
             QuestionEvaluation(
@@ -100,7 +145,7 @@ def evaluate_test(submission_id, db):
                 question_type="MCQ",
                 difficulty=question.difficulty,
                 skill=question.technology,
-                max_score=5,
+                max_score=MAX_MCQ_SCORE,
                 obtained_score=score,
                 attempted=attempted,
                 correct=correct,
@@ -108,31 +153,47 @@ def evaluate_test(submission_id, db):
             )
         )
 
-    # ================= FINAL SCORE =================
-    percentage = (total_score / max_score) * 100 if max_score else 0
+    # ================= FINAL METRICS (IMAGE-BASED LOGIC) =================
+    percentage = round((total_score / max_score) * 100, 2) if max_score else 0
 
-    level = (
-        "Beginner" if percentage <= 25 else
-        "Intermediate" if percentage <= 50 else
-        "Experienced" if percentage <= 75 else
-        "Proficient"
-    )
+    if percentage <= 30:
+        level = "Beginner"
+        s_code = "S0"
+    elif percentage <= 55:
+        level = "Intermediate"
+        s_code = "S1"
+    elif percentage <= 75:
+        level = "Proficient"
+        s_code = "S2"
+    elif percentage <= 90:
+        level = "Advanced"
+        s_code = "S3"
+    else:
+        level = "Expert"
+        s_code = "S4"
 
-    # ================= PROCTORING =================
-    snapshots = [
-        s for s in (submission.proctoring_snapshots or [])
-        if isinstance(s.get("image"), str)
-        and s["image"].startswith("data:image")
-    ]
+    # ================= ANALYTICS =================
+    section_analysis = {
+        k: {
+            "score": v["score"],
+            "max": v["max"],
+            "percentage": round((v["score"] / v["max"]) * 100, 2) if v["max"] else 0
+        }
+        for k, v in section_map.items()
+    }
 
-    window_violations = len(snapshots)
-    time_violations = 0
+    skill_analysis = {
+        k: {
+            "score": v["score"],
+            "max": v["max"],
+            "percentage": round((v["score"] / v["max"]) * 100, 2) if v["max"] else 0
+        }
+        for k, v in skill_map.items()
+    }
 
-    # ================= DIFFICULTY ANALYSIS =================
     difficulty_analysis = {}
-
-    for level_name, scores in difficulty_map.items():
-        if not scores:
+    for level_name, rows in difficulty_map.items():
+        if not rows:
             difficulty_analysis[level_name] = {
                 "questions": 0,
                 "correct": 0,
@@ -140,52 +201,38 @@ def evaluate_test(submission_id, db):
             }
             continue
 
-        max_possible = 0
-        correct_count = 0
-
-        for s in scores:
-            if s == 15:
-                max_possible += 15
-                correct_count += 1
-            elif s == 5:
-                max_possible += 5
-                correct_count += 1
-            else:
-                max_possible += 15 if s < 5 else 5
+        total_s = sum(s for s, _ in rows)
+        total_m = sum(m for _, m in rows)
+        correct_cnt = sum(1 for s, m in rows if s == m)
 
         difficulty_analysis[level_name] = {
-            "questions": len(scores),
-            "correct": correct_count,
-            "percentage": round((sum(scores) / max_possible) * 100, 2)
+            "questions": len(rows),
+            "correct": correct_cnt,
+            "percentage": round((total_s / total_m) * 100, 2)
         }
 
-    # ================= SAVE EVALUATION =================
     evaluation = TestEvaluation(
         test_id=test.id,
         student_id=submission.student_id,
-
         total_score=total_score,
         max_score=max_score,
         percentage=percentage,
         level=level,
-
-        section_analysis=section_map,
-        skill_analysis=skill_map,
+        s_code=s_code,
+        section_analysis=section_analysis,
+        skill_analysis=skill_analysis,
         difficulty_analysis=difficulty_analysis,
-
         proctoring_analysis={
             "enabled": True,
-            "window_violations": window_violations,
-            "time_violations": time_violations,
-            "snapshots": snapshots
+            "window_violations": len(submission.proctoring_snapshots or []),
+            "time_violations": 0,
+            "snapshots": submission.proctoring_snapshots or []
         },
-
         test_log={
             "appeared_on": submission.submitted_at.isoformat(),
             "completed_on": submission.submitted_at.isoformat(),
             "report_generated_on": time.strftime("%Y-%m-%d %H:%M:%S")
         },
-
         time_taken_sec=int(time.time() - start_time)
     )
 

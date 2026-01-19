@@ -1,4 +1,3 @@
-//src/components/AnalyticsAnalysis.jsx
 import React, { useEffect, useState } from "react"; 
 import axios from "axios";
 import {
@@ -42,7 +41,11 @@ export default function AnalyticsAnalysis({ testId }) {
     return <p className="text-sm text-gray-500">Loading analytics…</p>;
   }
 
-  const score = Math.round(data.avg_score || 0);
+  /* ================= SCORE / ACCURACY ================= */
+  const score = Math.round(
+    data.percentage ?? data.avg_score ?? 0
+  );
+
   const scoreLevel =
     score <= 25 ? "Beginner" :
     score <= 50 ? "Intermediate" :
@@ -51,52 +54,31 @@ export default function AnalyticsAnalysis({ testId }) {
 
   const gaugeData = [{ value: score }, { value: 100 - score }];
 
-  /* ================= FIXED SECTION ANALYSIS ================= */
+  /* ================= SECTION ANALYSIS (FIXED) ================= */
   const sectionData = Object.entries(data.section_analysis || {}).map(
-    ([name, scores]) => {
-      const max = scores.reduce(
-        (sum, s) => sum + (s === 5 ? 5 : 15),
-        0
-      );
-
-      return {
-        name,
-        score: max === 0
-          ? 0
-          : Math.round(
-              (scores.reduce((a, b) => a + b, 0) / max) * 100
-            )
-      };
-    }
-  );
-
-  /* ================= FIXED SKILL ANALYSIS ================= */
-  const skillData = Object.entries(data.skill_analysis || {}).map(
-    ([skill, scores]) => {
-      const max = scores.reduce(
-        (sum, s) => sum + (s === 5 ? 5 : 15),
-        0
-      );
-
-      return {
-        skill,
-        value: max === 0
-          ? 0
-          : Math.round(
-              (scores.reduce((a, b) => a + b, 0) / max) * 100
-            )
-      };
-    }
-  );
-
-  const difficultyData = Object.entries(data.difficulty_analysis || {}).map(
-    ([level, obj]) => ({
-      level,
-      accuracy: obj.percentage || 0
+    ([name, obj]) => ({
+      name,
+      score: obj?.percentage ?? 0
     })
   );
 
-  const proctoring = data.proctoring || {};
+  /* ================= SKILL ANALYSIS (FIXED) ================= */
+  const skillData = Object.entries(data.skill_analysis || {}).map(
+    ([skill, obj]) => ({
+      skill,
+      value: obj?.percentage ?? 0
+    })
+  );
+
+  /* ================= DIFFICULTY ANALYSIS ================= */
+  const difficultyData = Object.entries(data.difficulty_analysis || {}).map(
+    ([level, obj]) => ({
+      level,
+      accuracy: obj?.percentage ?? 0
+    })
+  );
+
+  const proctoring = data.proctoring || data.proctoring_analysis || {};
   const snapshots = proctoring.snapshots || [];
   const testLog = data.test_log || {};
 
@@ -205,7 +187,7 @@ export default function AnalyticsAnalysis({ testId }) {
   );
 }
 
-/* ================= SNAPSHOT DIALOG (FULLSCREEN) ================= */
+/* ================= SNAPSHOT DIALOG ================= */
 function SnapshotDialog({ snapshots, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/80 z-50">
