@@ -24,6 +24,9 @@ export default function TestInstructionsPage() {
   const codingCount = test.coding_question_ids?.length || 0;
   const totalQuestions = mcqCount + codingCount;
 
+  // ✅ FIX: derive duration correctly
+  const totalMinutes = mcqCount * 1 + codingCount * 15;
+
   return (
     <div className="max-w-5xl mx-auto p-10">
       {/* HEADER */}
@@ -61,7 +64,7 @@ export default function TestInstructionsPage() {
         <div className="grid grid-cols-3 p-4 border-t font-semibold">
           <span>Total</span>
           <span>{totalQuestions}</span>
-          <span>{test.duration_minutes} minutes</span>
+          <span>{totalMinutes} minutes</span>
         </div>
       </div>
 

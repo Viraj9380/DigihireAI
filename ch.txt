@@ -42,42 +42,6 @@ print(fact)
 
 
 
-Test_candidates
-Name email
-Token create: test_id, access create and end date time
-Access token save in db
-Sectionwise save: first save and then next (separate APIs)
-Invite: resend button, default currnt time if not set
-Analysis correction
-Settings tab correct
-
-
-
-
-import jwt
-import uuid
-from datetime import datetime, timedelta
-from app.core.config import settings
-
-def generate_invite_token(email: str, candidate_id: str, assessment_candidate_id: str, company_id: str, expiry_days: int) -> tuple[str, str]:
-    """
-    Returns (jwt_token, jti).
-    expiry_days is passed from caller (company-specific).
-    """
-    jti = str(uuid.uuid4())
-    payload = {
-    "sub": "candidate_invite",
-    "email":str(email),
-    "cid": str(candidate_id),
-    "aci": str(assessment_candidate_id),
-    "coid": str(company_id),   # ✅ add this
-    "jti": jti,
-    "exp": datetime.utcnow() + timedelta(days=expiry_days),
-    "iat": datetime.utcnow(),
-}
-
-    token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    return token, jti
 
 
 
@@ -89,11 +53,71 @@ def generate_invite_token(email: str, candidate_id: str, assessment_candidate_id
 
 
 
-Now at Invite tab, along with current logic, give small resend button. After pressing that button, a dialog window should be opened exactly same like current invite modal.
-The functionality of the Resend button should be all same like current but the main difference between them is if any student faced issues or exceeds time limit then the student will contact the team and the team means our invite modal should solve this problem with the help of resend button.
-Refer the current logic and update it.
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+test env : mcq 
+report---
+proctoring---
 

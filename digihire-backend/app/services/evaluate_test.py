@@ -1,4 +1,5 @@
 # app/services/evaluate_test.py
+# app/services/evaluate_test.py
 import time
 from app.models import (
     CodingTest,
@@ -153,7 +154,7 @@ def evaluate_test(submission_id, db):
             )
         )
 
-    # ================= FINAL METRICS (IMAGE-BASED LOGIC) =================
+    # ================= FINAL METRICS =================
     percentage = round((total_score / max_score) * 100, 2) if max_score else 0
 
     if percentage <= 30:
@@ -211,6 +212,7 @@ def evaluate_test(submission_id, db):
             "percentage": round((total_s / total_m) * 100, 2)
         }
 
+    # ================= SAVE EVALUATION =================
     evaluation = TestEvaluation(
         test_id=test.id,
         student_id=submission.student_id,
@@ -218,7 +220,6 @@ def evaluate_test(submission_id, db):
         max_score=max_score,
         percentage=percentage,
         level=level,
-        s_code=s_code,
         section_analysis=section_analysis,
         skill_analysis=skill_analysis,
         difficulty_analysis=difficulty_analysis,
@@ -231,7 +232,8 @@ def evaluate_test(submission_id, db):
         test_log={
             "appeared_on": submission.submitted_at.isoformat(),
             "completed_on": submission.submitted_at.isoformat(),
-            "report_generated_on": time.strftime("%Y-%m-%d %H:%M:%S")
+            "report_generated_on": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "s_code": s_code   # ✅ STORED SAFELY HERE
         },
         time_taken_sec=int(time.time() - start_time)
     )

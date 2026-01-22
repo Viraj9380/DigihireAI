@@ -42,6 +42,9 @@ export default function TestEnvironment() {
 
   const [mcqAnswers, setMcqAnswers] = useState({});
   const [sectionLocked, setSectionLocked] = useState(false);
+  const [mcqSectionTime, setMcqSectionTime] = useState(0);
+  const [codingSectionTime, setCodingSectionTime] = useState(0);
+
 
 
   const timerRef = useRef(null);
@@ -60,8 +63,10 @@ export default function TestEnvironment() {
   }, []);
 
   const loadTest = async () => {
-  const testsRes = await axios.get(`${API}/coding/tests`);
-  const test = testsRes.data.find(t => t.id === testId);
+    const testRes = await axios.get(`${API}/coding/tests/${testId}`);
+    const test = testRes.data;
+
+
   if (!test) return;
 
   // === Existing settings (UNCHANGED) ===
@@ -107,7 +112,38 @@ export default function TestEnvironment() {
     setQuestions(codingMatched);
   }
 
-  setTimeLeft(test.duration_minutes * 60);
+  // ===== MCQ TIME =====
+const perMcq = Number(test.mcq_time_minutes ?? 1);
+const mcqCount = mcqs.length;
+
+const mcqTimeMinutes =
+  mcqCount > 0 ? perMcq * mcqCount : 0;
+
+
+// ===== CODING TIME =====
+const config = test.coding_time_config || {
+  Easy: 10,
+  Medium: 15,
+  Hard: 20
+};
+
+const codingTimeMinutes = codingMatched.reduce(
+  (sum, q) => sum + (config[q.difficulty] || 15),
+  0
+);
+
+
+// store section times
+setMcqSectionTime(mcqTimeMinutes * 60);
+setCodingSectionTime(codingTimeMinutes * 60);
+
+// start with MCQ section timer
+if (mcqs.length > 0) {
+  setTimeLeft(mcqTimeMinutes * 60);
+} else {
+  setTimeLeft(codingTimeMinutes * 60);
+}
+
 };
 
 
@@ -241,10 +277,22 @@ useEffect(() => {
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clearInterval(timerRef.current);
-          submitTest();
-          return 0;
-        }
+  clearInterval(timerRef.current);
+
+  // 🔥 MCQ AUTO SUBMIT
+  if (section === "MCQ") {
+    setSection("CODING");
+    setQuestions(codingQuestions);
+    setCurrentIndex(0);
+    setTimeLeft(codingSectionTime);
+    return codingSectionTime;
+  }
+
+  // 🔥 CODING AUTO SUBMIT (SAVE CODE)
+  submitTest();
+  return 0;
+}
+
         return prev - 1;
       });
     }, 1000);
@@ -441,6 +489,7 @@ const goToQuestion = (index) => {
                 <label key={idx} className="flex gap-3 items-center border p-3 rounded">
                   <input
                     type="radio"
+                    disabled={section !== "MCQ"}   // ✅ ADD THIS LINE
                     checked={mcqAnswers[currentQuestion.id] === idx}
                     onChange={() =>
                       setMcqAnswers({ ...mcqAnswers, [currentQuestion.id]: idx })
@@ -475,6 +524,7 @@ const goToQuestion = (index) => {
                       setQuestions(codingQuestions);
                       setCurrentIndex(0);
                       setSectionLocked(true);
+                      setTimeLeft(codingSectionTime);
                     }}
                   >
                     Proceed to Next Section →
@@ -734,4 +784,5 @@ const goToQuestion = (index) => {
     </div>
   );
 }
+
 

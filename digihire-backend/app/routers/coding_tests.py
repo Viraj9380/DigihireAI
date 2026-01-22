@@ -23,7 +23,8 @@ class AddQuestionsPayload(BaseModel):
 
 class TestSettingsUpdate(BaseModel):
     title: str | None = None
-    duration_minutes: int | None = None
+    coding_time_config: dict | None = None
+    mcq_time_minutes: int | None = None
     allow_copy_paste: bool | None = None
     terminate_on_violation: bool | None = None
     max_violations: int | None = None
@@ -46,6 +47,14 @@ def create_test(payload: TestCreate, db: Session = Depends(get_db)):
 @router.get("/")
 def list_tests(db: Session = Depends(get_db)):
     return db.query(CodingTest).order_by(CodingTest.created_at.desc()).all()
+
+@router.get("/{test_id}")
+def get_test(test_id: UUID, db: Session = Depends(get_db)):
+    test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    return test
+
 
 @router.post("/{test_id}/add-questions")
 def add_questions(
@@ -104,17 +113,19 @@ def delete_test(test_id: UUID, db: Session = Depends(get_db)):
 
 
 
-@router.put("/coding/tests/{test_id}")
+@router.put("/{test_id}")
 def update_test_settings(
-    test_id: str,
+    test_id: UUID,
     payload: TestSettingsUpdate,
     db: Session = Depends(get_db)
 ):
     test = db.query(CodingTest).filter(CodingTest.id == test_id).first()
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
+    
+    updates = payload.dict(exclude_unset=True)
 
-    for key, value in payload.dict(exclude_unset=True).items():
+    for key, value in updates.items():
         setattr(test, key, value)
 
     db.commit()

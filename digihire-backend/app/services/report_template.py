@@ -162,11 +162,11 @@ def render_report_html(evaluation, student, test, questions):
   <table>
     <tr>
       <th>Section</th>
-      <th>Score</th>
+      
       <th>Percentage</th>
     </tr>
     {''.join(
-        f"<tr><td>{k}</td><td>{v['score']}/{v['max']}</td><td>{v['percentage']}%</td></tr>"
+        f"<tr><td>{k}</td><td>{v['percentage']}%</td></tr>"
         for k, v in evaluation.section_analysis.items()
     )}
   </table>
@@ -175,11 +175,11 @@ def render_report_html(evaluation, student, test, questions):
   <table>
     <tr>
       <th>Skill</th>
-      <th>Score</th>
+      
       <th>Percentage</th>
     </tr>
     {''.join(
-        f"<tr><td>{k}</td><td>{v['score']}/{v['max']}</td><td>{v['percentage']}%</td></tr>"
+        f"<tr><td>{k}</td><td>{v['percentage']}%</td></tr>"
         for k, v in evaluation.skill_analysis.items()
     )}
   </table>

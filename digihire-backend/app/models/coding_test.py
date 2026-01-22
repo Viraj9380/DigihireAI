@@ -1,3 +1,4 @@
+# app/models/coding_test.py
 import uuid
 from sqlalchemy import Column, String, Integer, TIMESTAMP, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -19,6 +20,16 @@ class CodingTest(Base):
     mcq_question_ids = Column(JSONB, default=list)     # mcq question UUIDs
 
     duration_minutes = Column(Integer, default=30)
+    # 🔹 NEW: Coding difficulty timing config (minutes)
+    coding_time_config = Column(
+    JSONB,
+    default=lambda: {
+        "Easy": 10,
+        "Medium": 15,
+        "Hard": 20
+    }
+)
+
 
     invites = Column(Integer, default=0)
     reports = Column(Integer, default=0)

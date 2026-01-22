@@ -50,6 +50,28 @@ export default function TestCreationPage() {
   const [showDigiHireMcqs, setShowDigiHireMcqs] = useState(false);
 
 
+  const computeDuration = (test, codingQs = [], mcqQs = []) => {
+  if (!codingQs.length && !mcqQs.length) return 0;
+
+  const mcqMinutes = mcqQs.length * (test.mcq_time_minutes || 1);
+
+
+  const config = test.coding_time_config || {
+    Easy: 10,
+    Medium: 15,
+    Hard: 20
+  };
+
+  const codingMinutes = codingQs.reduce(
+    (sum, q) => sum + (config[q.difficulty] || 15),
+    0
+  );
+
+  return mcqMinutes + codingMinutes;
+};
+
+
+
   const fetchTests = async () => {
     const res = await axios.get(`${API}/coding/tests`);
     setTests(res.data);
@@ -91,11 +113,12 @@ export default function TestCreationPage() {
 
   const loadMcqs = async () => {
     const [testRes, mcqRes] = await Promise.all([
-      axios.get(`${API}/coding/tests`),
+      
+      axios.get(`${API}/coding/tests/${selectedTest.id}`),
       axios.get(`${API}/mcq/questions`)
     ]);
 
-    const test = testRes.data.find(t => t.id === selectedTest.id);
+    const test = testRes.data;
 
     setMcqQuestions(
       mcqRes.data.filter(q =>
@@ -110,10 +133,18 @@ export default function TestCreationPage() {
 
 
   const saveSettings = async () => {
-    await axios.put(`${API}/coding/tests/${selectedTest.id}`, selectedTest);
-    fetchTests();
-    alert("Settings saved");
-  };
+  const res = await axios.put(
+    `${API}/coding/tests/${selectedTest.id}`,
+    selectedTest
+  );
+
+  // 🔥 IMPORTANT: refresh selectedTest from backend
+  setSelectedTest(res.data);
+
+  fetchTests();
+  alert("Settings saved");
+};
+
 
   if (activeTab === "questions") {
     navigate("/my-questions");
@@ -256,17 +287,27 @@ const handleProceedAddQuestions = ({ library }) => {
 
 
         {detailTab === "invite" && (
-          <div>
-            <button
-              onClick={() => setInviteTest(selectedTest)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded mb-4"
-            >
-              Invite Candidate
-            </button>
+  <div>
+    <button
+      onClick={() => setInviteTest({ test: selectedTest, mode: "invite" })}
+      className="bg-indigo-600 text-white px-4 py-2 rounded mb-4"
+    >
+      Invite Candidate
+    </button>
 
-            <InviteList testId={selectedTest.id} />
-          </div>
-        )}
+    <InviteList
+      testId={selectedTest.id}
+      onReinvite={(email) =>
+        setInviteTest({
+          test: selectedTest,
+          mode: "reinvite",
+          email,
+        })
+      }
+    />
+  </div>
+)}
+
 
         {detailTab === "settings" && (
           <div className="space-y-3 max-w-md">
@@ -281,17 +322,54 @@ const handleProceedAddQuestions = ({ library }) => {
               }
             />
 
-            <input
-              type="number"
-              className="border p-2 w-full"
-              value={selectedTest.duration_minutes}
-              onChange={(e) =>
-                setSelectedTest({
-                  ...selectedTest,
-                  duration_minutes: Number(e.target.value),
-                })
-              }
-            />
+            <div className="border rounded p-4 space-y-3">
+  <h3 className="font-semibold">Coding Question Timing (minutes)</h3>
+
+  {["Easy", "Medium", "Hard"].map(level => (
+    <div key={level} className="flex justify-between items-center">
+      <span>{level}</span>
+      <input
+        type="number"
+        className="border p-1 w-20"
+        value={selectedTest.coding_time_config?.[level] ?? (
+          level === "Easy" ? 10 : level === "Medium" ? 15 : 20
+        )}
+        onChange={e =>
+          setSelectedTest({
+            ...selectedTest,
+            coding_time_config: {
+              ...selectedTest.coding_time_config,
+              [level]: Number(e.target.value)
+            }
+          })
+        }
+      />
+    </div>
+  ))}
+</div>
+            <div className="border rounded p-4 space-y-2">
+  <h3 className="font-semibold">MCQ Timing</h3>
+
+  <div className="flex justify-between items-center">
+    <span>Time per MCQ (minutes)</span>
+    <input
+      type="number"
+      min={1}
+      className="border p-1 w-20"
+      value={selectedTest.mcq_time_minutes ?? 1}
+      onChange={(e) =>
+        setSelectedTest({
+          ...selectedTest,
+          mcq_time_minutes: Number(e.target.value)
+        })
+      }
+    />
+  </div>
+</div>
+
+
+
+            
 
             <SettingRadio
               label="Allow Copy/Paste"
@@ -341,11 +419,14 @@ const handleProceedAddQuestions = ({ library }) => {
 )}
 
         {inviteTest && (
-          <InviteModal
-            test={inviteTest}
-            onClose={() => setInviteTest(null)}
-          />
-        )}
+  <InviteModal
+    test={inviteTest.test}
+    mode={inviteTest.mode}
+    presetEmail={inviteTest.email}
+    onClose={() => setInviteTest(null)}
+  />
+)}
+
 
         {showAddModal && (
           <AddQuestionsModal
@@ -450,11 +531,17 @@ const handleProceedAddQuestions = ({ library }) => {
           <h2 className="font-semibold">{t.title}</h2>
 
           <p className="text-sm text-gray-500">
-            Questions:{" "}
-            {(t.coding_question_ids?.length || 0) +
-              (t.mcq_question_ids?.length || 0)}
-            {" | "}Duration: {t.duration_minutes} min
-          </p>
+  Questions:{" "}
+  {(t.coding_question_ids?.length || 0) +
+    (t.mcq_question_ids?.length || 0)}
+  {" | "}
+  Duration:{" "}
+  {(
+    (t.mcq_question_ids?.length || 0) * (t.mcq_time_minutes || 1) +   
+    (t.coding_question_ids?.length || 0) * 15 // avg coding time
+  )} min
+</p>
+
 
           <p className="text-sm">
             📩 {t.invites || 0} Invites | 📊 {t.reports} Reports
@@ -500,14 +587,16 @@ function SettingRadio({ label, value, onChange }) {
   );
 }
 
-function InviteList({ testId }) {
+function InviteList({ testId, onReinvite }) {
   const [rows, setRows] = useState([]);
 
-  useEffect(() => {
+  const load = () => {
     axios
       .get(`${API}/coding/tests/${testId}/invites`)
       .then((res) => setRows(res.data));
-  }, [testId]);
+  };
+
+  useEffect(load, [testId]);
 
   return (
     <table className="w-full border">
@@ -517,6 +606,7 @@ function InviteList({ testId }) {
           <th>Submitted At</th>
           <th>Access Time</th>
           <th>Proctoring</th>
+          <th>Reinvite</th>
         </tr>
       </thead>
       <tbody>
@@ -526,9 +616,18 @@ function InviteList({ testId }) {
             <td>{r.submitted_at || "-"}</td>
             <td>{r.access_time}</td>
             <td>{r.proctoring ? "Yes" : "No"}</td>
+            <td className="text-center">
+              <button
+                onClick={() => onReinvite(r.email)}
+                className="text-blue-600 underline text-sm"
+              >
+                Reinvite
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
   );
 }
+
