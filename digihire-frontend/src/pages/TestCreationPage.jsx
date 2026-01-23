@@ -371,6 +371,64 @@ const handleProceedAddQuestions = ({ library }) => {
 
             
 
+            
+
+            <div className="border rounded p-4 space-y-3">
+  <p className="font-medium">Terminate on Violation</p>
+
+  <label className="mr-4">
+    <input
+      type="radio"
+      checked={selectedTest.terminate_on_violation === true}
+      onChange={() =>
+        setSelectedTest({
+          ...selectedTest,
+          terminate_on_violation: true,
+          max_violations: selectedTest.max_violations ?? 1
+        })
+      }
+    />{" "}
+    Yes
+  </label>
+
+  <label>
+    <input
+      type="radio"
+      checked={selectedTest.terminate_on_violation === false}
+      onChange={() =>
+        setSelectedTest({
+          ...selectedTest,
+          terminate_on_violation: false,
+          max_violations: null
+        })
+      }
+    />{" "}
+    No
+  </label>
+
+  {/* 🔥 SHOW ONLY WHEN YES */}
+  {selectedTest.terminate_on_violation && (
+    <div className="mt-3">
+      <label className="text-sm text-gray-700 block mb-1">
+        Number of violations after which test should terminate
+      </label>
+
+      <input
+        type="number"
+        min={1}
+        className="border p-2 w-32"
+        value={selectedTest.max_violations ?? 1}
+        onChange={(e) =>
+          setSelectedTest({
+            ...selectedTest,
+            max_violations: Number(e.target.value)
+          })
+        }
+      />
+    </div>
+  )}
+</div>
+
             <SettingRadio
               label="Allow Copy/Paste"
               value={selectedTest.allow_copy_paste}
@@ -379,16 +437,6 @@ const handleProceedAddQuestions = ({ library }) => {
               }
             />
 
-            <SettingRadio
-              label="Terminate on Violation"
-              value={selectedTest.terminate_on_violation}
-              onChange={(v) =>
-                setSelectedTest({
-                  ...selectedTest,
-                  terminate_on_violation: v,
-                })
-              }
-            />
 
             <SettingRadio
               label="Shuffle Questions"

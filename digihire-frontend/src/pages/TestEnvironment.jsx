@@ -29,6 +29,8 @@ export default function TestEnvironment() {
   const [terminateOnViolation, setTerminateOnViolation] = useState(false);
   const [maxViolations, setMaxViolations] = useState(1);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [proctoringReady, setProctoringReady] = useState(false);
+
 
   const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -149,17 +151,16 @@ if (mcqs.length > 0) {
 
   /* ================= PROCTORING INIT (ONCE) ================= */
   /* ================= PROCTORING INIT (ONCE) ================= */
+/* ================= PROCTORING INIT (BEFORE TEST START) ================= */
 useEffect(() => {
-  if (!started) return;
-
   const initProctoring = async () => {
     try {
-      // Camera permission (for IMAGE / VIDEO modes)
+      // Camera permission
       if (["IMAGE", "VIDEO", "VIDEO_SCREEN"].includes(proctoring)) {
         await navigator.mediaDevices.getUserMedia({ video: true });
       }
 
-      // Screen share → MUST be piped into a DOM-mounted <video>
+      // Screen permission
       if (
         ["SCREEN", "VIDEO_SCREEN"].includes(proctoring) &&
         !screenStreamRef.current
@@ -171,26 +172,31 @@ useEffect(() => {
         screenStreamRef.current = stream;
 
         if (videoRef.current) {
-  videoRef.current.srcObject = stream;
-  videoRef.current.muted = true;
-  videoRef.current.playsInline = true;
+          videoRef.current.srcObject = stream;
+          videoRef.current.muted = true;
+          videoRef.current.playsInline = true;
 
-  videoRef.current.onloadedmetadata = async () => {
-    await videoRef.current.play();
-    videoReadyRef.current = true; // ✅ CRITICAL
-    console.log("✅ Proctoring video ready");
-  };
-}
-
+          videoRef.current.onloadedmetadata = async () => {
+            await videoRef.current.play();
+            videoReadyRef.current = true;
+            console.log("✅ Proctoring ready before test start");
+          };
+        }
       }
+
+      setProctoringReady(true);
     } catch (err) {
-      alert("Screen sharing permission is mandatory for this test.");
-      window.location.reload();
+      alert("❌ Proctoring permission is mandatory to start this test.");
+      setProctoringReady(false);
     }
   };
 
-  initProctoring();
-}, [started, proctoring]);
+  if (proctoring !== "NONE") {
+    initProctoring();
+  } else {
+    setProctoringReady(true); // No proctoring → allow start
+  }
+}, [proctoring]);
 
 
   /* ================= SNAPSHOT (NO PERMISSION REQUEST) ================= */
@@ -422,15 +428,27 @@ const goToQuestion = (index) => {
         <p>Total Questions: {totalQuestionsAll}</p>
         <p>Duration: {Math.floor(timeLeft / 60)} minutes</p>
 
+
+        {!proctoringReady && (
+  <p className="text-sm text-orange-600 mt-3">
+    🔒 Please allow camera/screen access to start the test
+  </p>
+)}
+
+
         <button
-          onClick={() => {
-            document.documentElement.requestFullscreen();
-            setStarted(true);
-          }}
-          className="mt-6 bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          Start Test
-        </button>
+  disabled={!proctoringReady}
+  onClick={() => {
+    document.documentElement.requestFullscreen();
+    setStarted(true);
+  }}
+  className={`mt-6 px-6 py-2 rounded text-white ${
+    proctoringReady ? "bg-blue-600" : "bg-gray-400 cursor-not-allowed"
+  }`}
+>
+  Start Test
+</button>
+
       </div>
     );
   }

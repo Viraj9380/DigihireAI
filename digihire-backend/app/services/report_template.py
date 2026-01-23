@@ -213,7 +213,7 @@ def render_report_html(evaluation, student, test, questions):
         f"<td>{q['type']}</td>"
         f"<td>{q['difficulty']}</td>"
         f"<td>{'Yes' if q['attempted'] else 'No'}</td>"
-        f"<td>{q['score']}</td>"
+        f"<td>{1 if q['score'] > 0 else 0}</td>"
         f"</tr>"
         for q in questions
     )}

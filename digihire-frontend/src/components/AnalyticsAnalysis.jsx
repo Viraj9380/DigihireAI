@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from "react"; 
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   PieChart,
   Pie,
   Cell,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
   BarChart,
   Bar,
   XAxis,
@@ -19,11 +15,19 @@ import { Eye, X } from "lucide-react";
 
 const API = "http://localhost:8000";
 
-const LEVEL_COLORS = {
+const STATUS_COLORS = {
+  completed: "#22c55e",
+  left: "#f59e0b",
+  terminated: "#ef4444",
+  suspended: "#a855f7"
+};
+
+const SKILL_COLORS = {
   Beginner: "#ef4444",
   Intermediate: "#f59e0b",
-  Experienced: "#3b82f6",
-  Proficient: "#10b981"
+  Proficient: "#3b82f6",
+  Advanced: "#10b981",
+  Expert: "#16a34a"
 };
 
 export default function AnalyticsAnalysis({ testId }) {
@@ -33,148 +37,121 @@ export default function AnalyticsAnalysis({ testId }) {
   useEffect(() => {
     axios
       .get(`${API}/coding/tests/${testId}/analytics`)
-      .then(res => setData(res.data))
-      .catch(() => setData(null));
+      .then(res => setData(res.data));
   }, [testId]);
 
-  if (!data) {
-    return <p className="text-sm text-gray-500">Loading analytics…</p>;
-  }
+  if (!data) return <p>Loading analytics…</p>;
 
-  /* ================= SCORE / ACCURACY ================= */
-  const score = Math.round(
-    data.percentage ?? data.avg_score ?? 0
+  const pipeline = data.candidate_pipeline || {};
+  const statusData = Object.entries(data.test_status || {}).map(
+    ([k, v]) => ({ name: k, value: v })
   );
 
-  const scoreLevel =
-    score <= 25 ? "Beginner" :
-    score <= 50 ? "Intermediate" :
-    score <= 75 ? "Experienced" :
-    "Proficient";
+  const skillDist = Object.entries(
+    data.candidate_performance?.skill_distribution || {}
+  ).map(([k, v]) => ({ name: k, value: v }));
 
-  const gaugeData = [{ value: score }, { value: 100 - score }];
-
-  /* ================= SECTION ANALYSIS (FIXED) ================= */
   const sectionData = Object.entries(data.section_analysis || {}).map(
-    ([name, obj]) => ({
-      name,
-      score: obj?.percentage ?? 0
-    })
+    ([name, obj]) => ({ name, value: obj.percentage || 0 })
   );
 
-  /* ================= SKILL ANALYSIS (FIXED) ================= */
-  const skillData = Object.entries(data.skill_analysis || {}).map(
-    ([skill, obj]) => ({
-      skill,
-      value: obj?.percentage ?? 0
-    })
-  );
-
-  /* ================= DIFFICULTY ANALYSIS ================= */
-  const difficultyData = Object.entries(data.difficulty_analysis || {}).map(
-    ([level, obj]) => ({
-      level,
-      accuracy: obj?.percentage ?? 0
-    })
-  );
-
-  const proctoring = data.proctoring || data.proctoring_analysis || {};
-  const snapshots = proctoring.snapshots || [];
+  const proctoring = data.proctoring || {};
+  const snapshots = proctoring.snapshots || {};
   const testLog = data.test_log || {};
 
   return (
     <div className="space-y-10">
 
-      {/* SCORE */}
-      <Card title="Score Analysis">
-        <div className="grid grid-cols-2 gap-6 items-center">
-          <ResponsiveContainer width="100%" height={220}>
+      {/* ===== PIPELINE + STATUS ===== */}
+      <div className="grid grid-cols-2 gap-6">
+
+        {/* ===== FUNNEL PIPELINE ===== */}
+        <Card title="Candidate Pipeline">
+          <PipelineFunnel
+            invited={pipeline.invited}
+            appeared={pipeline.appeared}
+            completed={pipeline.completed}
+          />
+        </Card>
+
+        {/* ===== TEST STATUS + LEGEND ===== */}
+        <Card title="Test Status">
+          <div className="flex gap-6">
+            <ResponsiveContainer width="70%" height={220}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  innerRadius={60}
+                  outerRadius={90}
+                >
+                  {statusData.map((s, i) => (
+                    <Cell key={i} fill={STATUS_COLORS[s.name]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+
+            <Legend colors={STATUS_COLORS} />
+          </div>
+        </Card>
+
+      </div>
+
+      {/* ===== CANDIDATE PERFORMANCE ===== */}
+      <Card title="Candidate Performance">
+        <p className="font-semibold mb-4">
+          Appeared Candidates: {data.candidate_performance.appeared}
+        </p>
+
+        <div className="flex gap-6">
+          <ResponsiveContainer width="70%" height={240}>
             <PieChart>
-              <Pie
-                data={gaugeData}
-                startAngle={180}
-                endAngle={0}
-                innerRadius={70}
-                outerRadius={100}
-                dataKey="value"
-              >
-                <Cell fill={LEVEL_COLORS[scoreLevel]} />
-                <Cell fill="#e5e7eb" />
+              <Pie data={skillDist} dataKey="value" innerRadius={60} outerRadius={100}>
+                {skillDist.map((s, i) => (
+                  <Cell key={i} fill={SKILL_COLORS[s.name]} />
+                ))}
               </Pie>
+              <Tooltip />
             </PieChart>
           </ResponsiveContainer>
 
-          <div>
-            <p className="text-3xl font-bold">{score}%</p>
-            <p className="text-sm text-gray-600">{scoreLevel}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Avg Time: {data.avg_time}s
-            </p>
-            <p className="text-xs text-gray-500">
-              Integrity Score: {data.integrity_score}%
-            </p>
-          </div>
+          <Legend colors={SKILL_COLORS} />
         </div>
       </Card>
 
-      <ChartCard title="Section Analysis">
-        <BarChart data={sectionData}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="score" fill="#6366f1" />
-        </BarChart>
-      </ChartCard>
+      {/* ===== SECTION ANALYSIS ===== */}
+      <Card title="Section Analysis">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={sectionData}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="value" fill="#6366f1" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
 
-      <ChartCard title="Skill Analysis">
-        <RadarChart data={skillData}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="skill" />
-          <Radar dataKey="value" fill="#22c55e" fillOpacity={0.6} />
-        </RadarChart>
-      </ChartCard>
-
-      <ChartCard title="Difficulty Analysis">
-        <BarChart data={difficultyData}>
-          <XAxis dataKey="level" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="accuracy" fill="#f97316" />
-        </BarChart>
-      </ChartCard>
-
+      {/* ===== PROCTORING ===== */}
       <Card title="Proctoring Analysis">
-        <div className="flex justify-between">
-          <div className="text-sm space-y-1">
-            <p><b>Snapshots:</b> {snapshots.length}</p>
-            <p><b>Window Violations:</b> {proctoring.window_violations || 0}</p>
-            <p><b>Time Violations:</b> {proctoring.time_violations || 0}</p>
-          </div>
+        <p>Window Violations: {proctoring.window_violations || 0}</p>
+        <p>Time Violations: {proctoring.time_violations || 0}</p>
 
-          {snapshots.length > 0 && (
-            <button
-              className="flex items-center gap-1 text-blue-600"
-              onClick={() => setShowSnapshots(true)}
-            >
-              <Eye size={16} /> View
-            </button>
-          )}
-        </div>
+        {snapshots.length > 0 && (
+          <button
+            className="text-blue-600 mt-2"
+            onClick={() => setShowSnapshots(true)}
+          >
+            <Eye size={16} /> View Snapshots
+          </button>
+        )}
       </Card>
 
+      {/* ===== TEST LOG ===== */}
       <Card title="Test Log">
-        <table className="w-full text-sm border">
-          <tbody>
-            <tr className="border-t">
-              <td className="p-2 font-medium">Appeared On</td>
-              <td className="p-2">{formatDate(testLog.appeared_on)}</td>
-            </tr>
-            <tr className="border-t">
-              <td className="p-2 font-medium">Completed On</td>
-              <td className="p-2">{formatDate(testLog.completed_on)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <p>Appeared On: {formatDate(testLog.appeared_on)}</p>
+        <p>Completed On: {formatDate(testLog.completed_on)}</p>
       </Card>
 
       {showSnapshots && (
@@ -187,54 +164,54 @@ export default function AnalyticsAnalysis({ testId }) {
   );
 }
 
-/* ================= SNAPSHOT DIALOG ================= */
-function SnapshotDialog({ snapshots, onClose }) {
+/* ================= COMPONENTS ================= */
+
+function PipelineFunnel({ invited, appeared, completed }) {
+  const max = Math.max(invited, appeared, completed) || 1;
+
   return (
-    <div className="fixed inset-0 bg-black/80 z-50">
-      <div className="absolute inset-0 flex flex-col bg-white">
+    <svg viewBox="0 0 300 220" className="mx-auto">
+      <FunnelStep y={20} value={invited} max={max} label="Invited" color="#3b82f6" />
+      <FunnelStep y={90} value={appeared} max={max} label="Appeared" color="#f59e0b" />
+      <FunnelStep y={160} value={completed} max={max} label="Completed" color="#22c55e" />
+    </svg>
+  );
+}
 
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h3 className="text-lg font-semibold">
-            Proctoring Snapshots ({snapshots.length})
-          </h3>
-          <button onClick={onClose}>
-            <X size={22} />
-          </button>
+function FunnelStep({ y, value, max, label, color }) {
+  const width = 220 * (value / max || 0.05);
+  const x = (300 - width) / 2;
+
+  return (
+    <>
+      <polygon
+        points={`${x},${y} ${x + width},${y} ${x + width - 30},${y + 40} ${x + 30},${y + 40}`}
+        fill={color}
+        opacity="0.9"
+      />
+      <text x="150" y={y + 25} textAnchor="middle" fill="#fff" fontSize="13">
+        {label}: {value}
+      </text>
+    </>
+  );
+}
+
+function Legend({ colors }) {
+  return (
+    <div className="space-y-2 text-sm">
+      {Object.entries(colors).map(([k, v]) => (
+        <div key={k} className="flex items-center gap-2">
+          <span
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: v }}
+          />
+          <span className="capitalize">{k}</span>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {snapshots.map((s, i) => (
-              <div key={i} className="border rounded-lg overflow-hidden">
-                <div className="p-3 text-sm bg-gray-50">
-                  <div className="font-medium">{s.type}</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(s.timestamp).toLocaleString()}
-                  </div>
-                </div>
-
-                {s.image?.startsWith("data:image") ? (
-                  <img
-                    src={s.image}
-                    alt="Proctoring Snapshot"
-                    className="w-full h-[260px] object-contain bg-black"
-                  />
-                ) : (
-                  <div className="h-[260px] flex items-center justify-center text-gray-500">
-                    Snapshot unavailable
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
+      ))}
     </div>
   );
 }
 
-/* ================= UI HELPERS ================= */
 function Card({ title, children }) {
   return (
     <div className="bg-white border rounded p-6">
@@ -244,13 +221,20 @@ function Card({ title, children }) {
   );
 }
 
-function ChartCard({ title, children }) {
+function SnapshotDialog({ snapshots, onClose }) {
   return (
-    <div className="bg-white border rounded p-4">
-      <h3 className="font-semibold mb-3">{title}</h3>
-      <ResponsiveContainer width="100%" height={260}>
-        {children}
-      </ResponsiveContainer>
+    <div className="fixed inset-0 bg-black/80 z-50">
+      <div className="bg-white m-10 p-6 rounded">
+        <div className="flex justify-between mb-4">
+          <h3>Snapshots</h3>
+          <button onClick={onClose}><X /></button>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {snapshots.map((s, i) => (
+            <img key={i} src={s.image} alt="" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
