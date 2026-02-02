@@ -60,6 +60,7 @@ export default function App() {
 
           <Route path="/coding/tests/:testId/questions" element={<MyMcqQuestionsPage />} />
           <Route path="/coding/tests/questions" element={<MyMcqQuestionsPage />} />
+          <Route path="/coding/tests/questions" element={<MyMcqQuestionsPage />} />
           <Route path="/coding/tests/:testId/questions/view" element={<ViewMcqQuestionsPage />} />
 
 

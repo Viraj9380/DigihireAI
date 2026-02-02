@@ -678,4 +678,3 @@ function InviteList({ testId, onReinvite }) {
     </table>
   );
 }
-
